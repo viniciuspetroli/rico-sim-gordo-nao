@@ -78,3 +78,22 @@ export function normalizeStateUf(state) {
   if (trimmed.length === 2) return trimmed.toUpperCase();
   return BR_STATE_TO_UF[trimmed.toLowerCase()] ?? trimmed;
 }
+
+// CPF de teste usado só em sandbox (passa no checksum do algoritmo). NUNCA usar em prod.
+const SANDBOX_TEST_CPF = '11144477735';
+
+// Extrai CPF do destinatário do Stripe Checkout Session via custom_fields.
+// Em sandbox, cai em CPF fake pra permitir testar antes de configurar o custom field nos Payment Links.
+export function getRecipientCpf(session) {
+  const fields = session.custom_fields ?? [];
+  const cpfField = fields.find(f =>
+    f.key?.toLowerCase().includes('cpf') ||
+    f.label?.custom?.toLowerCase().includes('cpf')
+  );
+  if (cpfField) {
+    const raw = cpfField.numeric?.value ?? cpfField.text?.value;
+    if (raw) return raw.replace(/\D/g, '');
+  }
+  if (ME_ENV !== 'production') return SANDBOX_TEST_CPF;
+  throw new Error('CPF do destinatário não encontrado em session.custom_fields. Adicione um Custom Field "CPF" aos Payment Links no Stripe Dashboard.');
+}

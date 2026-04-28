@@ -3,7 +3,7 @@
 
 import Stripe from 'stripe';
 import { pickCheapestService, addToCart, checkoutAndGenerate, getPrintUrl, getTracking } from './_lib/melhor-envio.js';
-import { PRODUCT_BY_COLOR, detectColorFromProductName, normalizeStateUf } from './_lib/config.js';
+import { PRODUCT_BY_COLOR, detectColorFromProductName, normalizeStateUf, getRecipientCpf } from './_lib/config.js';
 
 export const config = {
   api: { bodyParser: false }, // Stripe valida assinatura no body cru
@@ -51,6 +51,7 @@ export default async function handler(req, res) {
       name: shipping.name,
       phone: session.customer_details?.phone ?? '',
       email: session.customer_details?.email,
+      document: getRecipientCpf(session),
     };
     const destinationAddress = {
       address: shipping.address.line1,
