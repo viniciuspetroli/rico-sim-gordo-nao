@@ -3,7 +3,7 @@
 
 import Stripe from 'stripe';
 import { pickCheapestService, addToCart, checkoutAndGenerate, getPrintUrl, getTracking } from './_lib/melhor-envio.js';
-import { PRODUCT_BY_COLOR, detectColorFromProductName } from './_lib/config.js';
+import { PRODUCT_BY_COLOR, detectColorFromProductName, normalizeStateUf } from './_lib/config.js';
 
 export const config = {
   api: { bodyParser: false }, // Stripe valida assinatura no body cru
@@ -57,7 +57,7 @@ export default async function handler(req, res) {
       complement: shipping.address.line2 ?? '',
       district: '', // Stripe não coleta bairro separado — fica no line1
       city: shipping.address.city,
-      state_abbr: shipping.address.state,
+      state_abbr: normalizeStateUf(shipping.address.state),
       country_id: shipping.address.country,
       postal_code: destinationCep,
     };
