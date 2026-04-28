@@ -69,23 +69,26 @@
     opacity: 0;
     animation: ch-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
   }
-  .hero h1 .ch:nth-child(1)  { animation-delay: 0.15s; }
-  .hero h1 .ch:nth-child(2)  { animation-delay: 0.20s; }
-  .hero h1 .ch:nth-child(3)  { animation-delay: 0.25s; }
-  .hero h1 .ch:nth-child(4)  { animation-delay: 0.30s; }
-  .hero h1 .ch:nth-child(5)  { animation-delay: 0.40s; }
-  .hero h1 .ch:nth-child(6)  { animation-delay: 0.45s; }
-  .hero h1 .ch:nth-child(7)  { animation-delay: 0.50s; }
-  .hero h1 .ch:nth-child(8)  { animation-delay: 0.55s; }
-  .hero h1 .accent .ch:nth-child(1) { animation-delay: 0.65s; }
-  .hero h1 .accent .ch:nth-child(2) { animation-delay: 0.72s; }
-  .hero h1 .accent .ch:nth-child(3) { animation-delay: 0.79s; }
-  .hero h1 .accent .ch:nth-child(4) { animation-delay: 0.86s; }
-  .hero h1 .accent .ch:nth-child(5) { animation-delay: 0.93s; }
-  .hero h1 .ch:nth-last-child(1)  { animation-delay: 1.10s; }
-  .hero h1 .ch:nth-last-child(2)  { animation-delay: 1.05s; }
-  .hero h1 .ch:nth-last-child(3)  { animation-delay: 1.00s; }
-  .hero h1 .ch:nth-last-child(4)  { animation-delay: 0.95s; }
+  /* "rico sim," (accent) — chars 1-9 */
+  .hero h1 > .accent .ch:nth-child(1) { animation-delay: 0.15s; }
+  .hero h1 > .accent .ch:nth-child(2) { animation-delay: 0.22s; }
+  .hero h1 > .accent .ch:nth-child(3) { animation-delay: 0.29s; }
+  .hero h1 > .accent .ch:nth-child(4) { animation-delay: 0.36s; }
+  .hero h1 > .accent .ch:nth-child(5) { animation-delay: 0.43s; }
+  .hero h1 > .accent .ch:nth-child(6) { animation-delay: 0.50s; }
+  .hero h1 > .accent .ch:nth-child(7) { animation-delay: 0.57s; }
+  .hero h1 > .accent .ch:nth-child(8) { animation-delay: 0.64s; }
+  .hero h1 > .accent .ch:nth-child(9) { animation-delay: 0.71s; }
+  /* "GORDO" and "NÃO." */
+  .hero h1 > .ch:nth-of-type(1) { animation-delay: 0.85s; }
+  .hero h1 > .ch:nth-of-type(2) { animation-delay: 0.92s; }
+  .hero h1 > .ch:nth-of-type(3) { animation-delay: 0.99s; }
+  .hero h1 > .ch:nth-of-type(4) { animation-delay: 1.06s; }
+  .hero h1 > .ch:nth-of-type(5) { animation-delay: 1.13s; }
+  .hero h1 > .ch:nth-of-type(6) { animation-delay: 1.25s; }
+  .hero h1 > .ch:nth-of-type(7) { animation-delay: 1.32s; }
+  .hero h1 > .ch:nth-of-type(8) { animation-delay: 1.39s; }
+  .hero h1 > .ch:nth-of-type(9) { animation-delay: 1.46s; }
 
   /* Stat number rolling */
   .stat-num-roll {
@@ -210,9 +213,10 @@
   .hero h1 {
     font-family: 'Archivo', sans-serif;
     font-weight: 900;
-    font-size: clamp(72px, 13vw, 168px);
-    line-height: 0.85;
-    letter-spacing: -4px;
+    font-size: clamp(56px, 10vw, 130px);
+    line-height: 0.9;
+    letter-spacing: -3px;
+    white-space: nowrap;
     margin: 0;
     text-transform: uppercase;
   }
@@ -434,6 +438,99 @@
   .variant-verde .desc { color: var(--moss-light); }
   .variant-marrom .desc { color: var(--gold); }
 
+  /* Variant buy button */
+  .variant-buy {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 24px;
+    padding: 18px 24px;
+    width: 100%;
+    max-width: 360px;
+    background: var(--cream);
+    color: #1a1f12;
+    border: none;
+    cursor: pointer;
+    font-family: 'Archivo', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background .15s, transform .15s;
+  }
+  .variant-buy:hover { background: var(--gold); transform: translateY(-1px); }
+  .variant-buy .arrow { font-size: 18px; }
+  .variant-buy .price-tag { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 18px; letter-spacing: 0; text-transform: none; font-weight: 500; }
+
+  /* Final dual CTA */
+  .dual-cta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 48px;
+  }
+  @media (max-width: 700px) { .dual-cta { grid-template-columns: 1fr; } }
+  .dual-cta a {
+    display: block;
+    padding: 32px 28px;
+    text-decoration: none;
+    color: var(--cream);
+    border: 1px solid var(--line);
+    background: var(--bg-deep);
+    transition: border-color .15s, background .15s, transform .15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .dual-cta a:hover {
+    border-color: var(--gold);
+    background: var(--bg-card);
+    transform: translateY(-2px);
+  }
+  .dual-cta .ctc-eyebrow {
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--mute);
+    margin-bottom: 8px;
+  }
+  .dual-cta .ctc-title {
+    font-family: 'Archivo', sans-serif;
+    font-size: 36px;
+    font-weight: 900;
+    letter-spacing: -1px;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  .dual-cta .ctc-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 24px;
+  }
+  .dual-cta .ctc-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 26px;
+    color: var(--gold);
+  }
+  .dual-cta .ctc-arrow {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--cream);
+  }
+  .dual-cta .ctc-swatch {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    margin-bottom: 16px;
+    border: 1px solid var(--line);
+  }
+
   /* Preço */
   .price {
     padding: 120px 64px;
@@ -606,9 +703,8 @@
 <section class="hero">
   <div>
     <h1 id="hero-title">
-      <span class="ch">R</span><span class="ch">I</span><span class="ch">C</span><span class="ch">O</span><br/>
-      <span class="ch">S</span><span class="ch">I</span><span class="ch">M</span><span class="ch">,</span><br/>
-      <span class="accent"><span class="ch">g</span><span class="ch">o</span><span class="ch">r</span><span class="ch">d</span><span class="ch">o</span></span><br/>
+      <span class="accent"><span class="ch">r</span><span class="ch">i</span><span class="ch">c</span><span class="ch">o</span><span class="ch">&nbsp;</span><span class="ch">s</span><span class="ch">i</span><span class="ch">m</span><span class="ch">,</span></span><br/>
+      <span class="ch">G</span><span class="ch">O</span><span class="ch">R</span><span class="ch">D</span><span class="ch">O</span><br/>
       <span class="ch">N</span><span class="ch">Ã</span><span class="ch">O</span><span class="ch">.</span>
     </h1>
     <p class="lead reveal reveal-delay-2">
@@ -707,6 +803,10 @@
       <div class="eyebrow">Cor 01 / Verde militar</div>
       <h3>VERDE.</h3>
       <p class="desc">A cor original. Algodão escovado, bordado branco-cru, aba curva.</p>
+      <a href="#" class="variant-buy" data-stripe="verde">
+        <span>Levar o verde</span>
+        <span class="price-tag">R$50 →</span>
+      </a>
     </div>
     <div class="bone-frame reveal reveal-delay-2">
       <div class="bone-bg-pattern"></div>
@@ -727,6 +827,10 @@
       <div class="eyebrow" style="color: #a89067;">Cor 02 / Marrom terra</div>
       <h3>MARROM.</h3>
       <p class="desc">Pra quem prefere algo mais terra. Mesmo bordado, mesmo voto.</p>
+      <a href="#" class="variant-buy" data-stripe="marrom">
+        <span>Levar o marrom</span>
+        <span class="price-tag">R$50 →</span>
+      </a>
     </div>
     <div class="bone-frame reveal reveal-delay-2">
       <div class="bone-bg-pattern"></div>
@@ -768,26 +872,34 @@
   </div>
 </section>
 
-<!-- CTA / FORM -->
+<!-- CTA FINAL -->
 <section id="pedir" class="form-section">
   <div class="eyebrow reveal">● 04 / Entrar pro movimento</div>
   <h2 class="reveal">BORA?</h2>
   <p class="intro reveal reveal-delay-1">
-    Preenche aí embaixo. Você recebe o link de pagamento no seu WhatsApp e o boné chega na semana seguinte.
+    Escolhe sua cor. Você é levado pro checkout seguro do Stripe — preenche endereço e paga em menos de 1 minuto. O boné chega na semana seguinte.
   </p>
-  <form class="form-grid reveal reveal-delay-2" id="pedido-form" onsubmit="enviarPedido(event)">
-    <input name="nome" placeholder="Seu nome" required />
-    <input name="whatsapp" placeholder="WhatsApp (com DDD)" required />
-    <select name="cor" required>
-      <option value="">Cor do boné</option>
-      <option>Verde militar</option>
-      <option>Marrom terra</option>
-    </select>
-    <input name="cep" placeholder="CEP" required />
-    <input class="full" name="endereco" placeholder="Endereço completo (rua, número, complemento, cidade)" required />
-    <button type="submit" class="cta-btn full">★ Quero meu boné — R$50</button>
-  </form>
-  <p class="form-note">Pagamento via Pix · Seus dados ficam só comigo</p>
+  <div class="dual-cta reveal reveal-delay-2">
+    <a href="#" data-stripe="verde">
+      <div class="ctc-swatch" style="background: #3d4a2a;"></div>
+      <div class="ctc-eyebrow">Cor 01</div>
+      <p class="ctc-title">Verde militar</p>
+      <div class="ctc-row">
+        <span class="ctc-price">R$50</span>
+        <span class="ctc-arrow">Comprar →</span>
+      </div>
+    </a>
+    <a href="#" data-stripe="marrom">
+      <div class="ctc-swatch" style="background: #4a3528;"></div>
+      <div class="ctc-eyebrow">Cor 02</div>
+      <p class="ctc-title">Marrom terra</p>
+      <div class="ctc-row">
+        <span class="ctc-price">R$50</span>
+        <span class="ctc-arrow">Comprar →</span>
+      </div>
+    </a>
+  </div>
+  <p class="form-note">Pagamento seguro via Stripe · Cartão, Pix · Envio incluso · Brasil todo</p>
 </section>
 
 <!-- FOOTER -->
@@ -924,30 +1036,29 @@
     e.currentTarget.querySelector('.marquee-track').style.animationPlayState = 'running';
   });
 
-  // ───── Form submit ─────
+  // ───── Stripe Checkout links ─────
+  // CONFIGURE: cole aqui os Payment Links que você criou no Stripe Dashboard
+  const STRIPE_LINKS = {
+    verde:  'https://buy.stripe.com/COLE_AQUI_O_LINK_VERDE',
+    marrom: 'https://buy.stripe.com/COLE_AQUI_O_LINK_MARROM',
+  };
+
+  document.querySelectorAll('[data-stripe]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.preventDefault();
+      const cor = el.dataset.stripe;
+      const url = STRIPE_LINKS[cor];
+      if (!url || url.includes('COLE_AQUI')) {
+        alert('⚠️ Link do Stripe ainda não configurado.\n\nAbra o index.html e cole o Payment Link em STRIPE_LINKS.' + cor);
+        return;
+      }
+      window.open(url, '_blank');
+    });
+  });
+
+  // ───── Form submit (legado, não usado mais) ─────
   function enviarPedido(e) {
     e.preventDefault();
-    const f = e.target;
-    const nome = f.nome.value;
-    const wa = f.whatsapp.value.replace(/\D/g, '');
-    const cor = f.cor.value;
-    const cep = f.cep.value;
-    const end = f.endereco.value;
-
-    // CONFIGURE: troque pelo SEU WhatsApp (formato: 5511999999999)
-    const MEU_WHATSAPP = '5511999999999';
-
-    const msg = encodeURIComponent(
-      `Bora! Quero meu boné rico sim, gordo não.\n\n` +
-      `Nome: ${nome}\n` +
-      `Cor: ${cor}\n` +
-      `CEP: ${cep}\n` +
-      `Endereço: ${end}\n` +
-      `WhatsApp: ${wa}\n\n` +
-      `Me manda o link de pagamento. Valeu!`
-    );
-
-    window.open(`https://wa.me/${MEU_WHATSAPP}?text=${msg}`, '_blank');
   }
 </script>
 
