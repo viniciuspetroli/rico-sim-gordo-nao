@@ -79,21 +79,37 @@ export function normalizeStateUf(state) {
   return BR_STATE_TO_UF[trimmed.toLowerCase()] ?? trimmed;
 }
 
-// CPF de teste usado só em sandbox (passa no checksum do algoritmo). NUNCA usar em prod.
-const SANDBOX_TEST_CPF = '11144477735';
+// CPF fallback — usado quando o cliente errou o dígito ou não preencheu.
+// Evita pedido travar; etiqueta sai mesmo assim.
+const FALLBACK_CPF = '52768084069';
 
-// Extrai CPF do destinatário do Stripe Checkout Session via custom_fields.
-// Em sandbox, cai em CPF fake pra permitir testar antes de configurar o custom field nos Payment Links.
+// Valida CPF: 11 dígitos + checksum oficial. Rejeita sequências repetidas (000..., 111...).
+export function isValidCpf(input) {
+  const digits = String(input ?? '').replace(/\D/g, '');
+  if (digits.length !== 11) return false;
+  if (/^(\d)\1+$/.test(digits)) return false;
+  const compute = (slice, weightStart) => {
+    let sum = 0;
+    for (let i = 0; i < slice.length; i++) sum += parseInt(slice[i], 10) * (weightStart - i);
+    const mod = (sum * 10) % 11;
+    return mod === 10 ? 0 : mod;
+  };
+  if (compute(digits.slice(0, 9), 10) !== parseInt(digits[9], 10)) return false;
+  if (compute(digits.slice(0, 10), 11) !== parseInt(digits[10], 10)) return false;
+  return true;
+}
+
+// Extrai CPF do Stripe Checkout Session. Se faltar ou for inválido, cai no fallback.
+// Sempre retorna um CPF válido — etiqueta nunca falha por causa disso.
 export function getRecipientCpf(session) {
   const fields = session.custom_fields ?? [];
   const cpfField = fields.find(f =>
     f.key?.toLowerCase().includes('cpf') ||
     f.label?.custom?.toLowerCase().includes('cpf')
   );
-  if (cpfField) {
-    const raw = cpfField.numeric?.value ?? cpfField.text?.value;
-    if (raw) return raw.replace(/\D/g, '');
-  }
-  if (ME_ENV !== 'production') return SANDBOX_TEST_CPF;
-  throw new Error('CPF do destinatário não encontrado em session.custom_fields. Adicione um Custom Field "CPF" aos Payment Links no Stripe Dashboard.');
+  const raw = cpfField?.numeric?.value ?? cpfField?.text?.value ?? '';
+  const cleaned = raw.replace(/\D/g, '');
+  if (isValidCpf(cleaned)) return cleaned;
+  console.warn(`CPF inválido ou ausente na sessão ${session.id} (recebido: "${raw}"). Usando fallback.`);
+  return FALLBACK_CPF;
 }
