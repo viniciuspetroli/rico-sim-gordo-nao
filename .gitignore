@@ -6,6 +6,13 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Node / Vercel
+node_modules/
+.vercel/
+.env
+.env.local
+.env*.local
+
 # Rascunhos de design (não usados pelo site)
 *.jsx
 design-canvas.jsx
