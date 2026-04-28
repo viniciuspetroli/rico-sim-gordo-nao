@@ -22,7 +22,7 @@ export const ORIGIN_ADDRESS = {
   city: 'São Paulo',
   state_abbr: 'SP',
   country_id: 'BR',
-  postal_code: 'PREENCHER_CEP', // Vini ainda vai mandar
+  postal_code: '04558005',
 };
 
 // Dimensões do pacote (boné embalado em caixa). cm e gramas.
