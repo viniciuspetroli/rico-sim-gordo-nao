@@ -13,7 +13,7 @@ export const ME_USER_AGENT = `Rico Sim Gordo Não (${process.env.ME_CONTACT_EMAI
 export const ORIGIN_ADDRESS = {
   name: 'João Pedro Vieira Ribeiro Guerra',
   phone: '+5513992078849',
-  email: process.env.ME_CONTACT_EMAIL ?? 'guerra@institutopedroruiz.com.br',
+  email: process.env.ME_CONTACT_EMAIL ?? 'guerraagencia@gmail.com',
   document: '', // CPF do João — preencher antes de produção (sem pontos/traços)
   address: 'Rua Kansas',
   number: '1700',
