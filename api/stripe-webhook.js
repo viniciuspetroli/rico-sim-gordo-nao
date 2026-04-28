@@ -4,6 +4,7 @@
 import Stripe from 'stripe';
 import { pickCheapestService, addToCart, checkoutAndGenerate, getPrintUrl, getTracking } from './_lib/melhor-envio.js';
 import { PRODUCT_BY_COLOR, detectColorFromProductName, normalizeStateUf, getRecipientCpf } from './_lib/config.js';
+import { notifyShipmentError } from './_lib/notify.js';
 
 export const config = {
   api: { bodyParser: false }, // Stripe valida assinatura no body cru
@@ -35,28 +36,42 @@ export default async function handler(req, res) {
   }
 
   const session = event.data.object;
+  const context = { source: 'stripe-webhook', stripe_session_id: session.id };
 
   try {
     const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 10, expand: ['data.price.product'] });
     const productName = lineItems.data[0]?.price?.product?.name;
     const color = detectColorFromProductName(productName);
+    context.product = { name: productName, color };
     if (!color) throw new Error(`Não consegui identificar a cor do produto: ${productName}`);
     const product = PRODUCT_BY_COLOR[color];
 
     const shipping = session.shipping_details ?? session.collected_information?.shipping_details;
     if (!shipping?.address) throw new Error('Sessão sem endereço de entrega — confira que o Payment Link tá coletando endereço');
 
-    const destinationCep = shipping.address.postal_code.replace(/\D/g, '');
-    const recipient = {
+    context.buyer = {
       name: shipping.name,
-      phone: session.customer_details?.phone ?? '',
       email: session.customer_details?.email,
+      phone: session.customer_details?.phone ?? '',
       document: getRecipientCpf(session),
     };
+    context.shipping_address = {
+      line1: shipping.address.line1,
+      line2: shipping.address.line2 ?? '',
+      city: shipping.address.city,
+      state: shipping.address.state,
+      postal_code: shipping.address.postal_code,
+      country: shipping.address.country,
+    };
+    context.amount_total = session.amount_total;
+    context.currency = session.currency;
+    context.stripe_dashboard_url = `https://dashboard.stripe.com/payments/${session.payment_intent}`;
+
+    const destinationCep = shipping.address.postal_code.replace(/\D/g, '');
     const destinationAddress = {
       address: shipping.address.line1,
       complement: shipping.address.line2 ?? '',
-      district: '', // Stripe não coleta bairro separado — fica no line1
+      district: '',
       city: shipping.address.city,
       state_abbr: normalizeStateUf(shipping.address.state),
       country_id: shipping.address.country,
@@ -72,12 +87,12 @@ export default async function handler(req, res) {
     const cartItem = await addToCart({
       service,
       destination: destinationAddress,
-      recipient,
+      recipient: context.buyer,
       product,
     });
     const orderId = cartItem.id;
 
-    const generated = await checkoutAndGenerate([orderId]);
+    await checkoutAndGenerate([orderId]);
     const printResult = await getPrintUrl([orderId]);
     const tracking = await getTracking([orderId]);
 
@@ -95,7 +110,10 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error(`Falha processando ${session.id}:`, err.response ?? err.message);
-    // Retorna 200 pra Stripe não ficar reentregando — log fica no Vercel pra reprocessar manual.
+    await notifyShipmentError({
+      ...context,
+      error: { message: err.message, details: err.response ?? null },
+    });
     return res.status(200).json({ received: true, error: err.message, manual_action_required: true });
   }
 }

@@ -14,6 +14,7 @@
 import Stripe from 'stripe';
 import { pickCheapestService, addToCart, checkoutAndGenerate, getPrintUrl, getTracking } from './_lib/melhor-envio.js';
 import { PRODUCT_BY_COLOR, detectColorFromProductName, normalizeStateUf, getRecipientCpf } from './_lib/config.js';
+import { notifyShipmentError } from './_lib/notify.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'use POST' });
@@ -27,26 +28,39 @@ export default async function handler(req, res) {
   if (!session_id) return res.status(400).json({ error: 'session_id obrigatório' });
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const context = { source: 'admin-generate-etiqueta', stripe_session_id: session_id, cep_override: cep_override ?? null };
 
   try {
     const session = await stripe.checkout.sessions.retrieve(session_id);
     const lineItems = await stripe.checkout.sessions.listLineItems(session_id, { limit: 10, expand: ['data.price.product'] });
     const productName = lineItems.data[0]?.price?.product?.name;
     const color = detectColorFromProductName(productName);
+    context.product = { name: productName, color };
     if (!color) throw new Error(`Não consegui identificar a cor do produto: ${productName}`);
     const product = PRODUCT_BY_COLOR[color];
 
     const shipping = session.shipping_details ?? session.collected_information?.shipping_details;
     if (!shipping?.address) throw new Error('Sessão sem endereço de entrega');
 
-    const destinationCep = (cep_override ?? shipping.address.postal_code).replace(/\D/g, '');
-
-    const recipient = {
+    context.buyer = {
       name: shipping.name,
-      phone: session.customer_details?.phone ?? '',
       email: session.customer_details?.email,
+      phone: session.customer_details?.phone ?? '',
       document: getRecipientCpf(session),
     };
+    context.shipping_address = {
+      line1: shipping.address.line1,
+      line2: shipping.address.line2 ?? '',
+      city: shipping.address.city,
+      state: shipping.address.state,
+      postal_code: shipping.address.postal_code,
+      country: shipping.address.country,
+    };
+    context.amount_total = session.amount_total;
+    context.currency = session.currency;
+    context.stripe_dashboard_url = `https://dashboard.stripe.com/payments/${session.payment_intent}`;
+
+    const destinationCep = (cep_override ?? shipping.address.postal_code).replace(/\D/g, '');
     const destinationAddress = {
       address: shipping.address.line1,
       complement: shipping.address.line2 ?? '',
@@ -63,7 +77,7 @@ export default async function handler(req, res) {
     });
     console.log(`admin-etiqueta ${session_id}: serviço ${service.name} R$${service.price} pra CEP ${destinationCep}`);
 
-    const cartItem = await addToCart({ service, destination: destinationAddress, recipient, product });
+    const cartItem = await addToCart({ service, destination: destinationAddress, recipient: context.buyer, product });
     const orderId = cartItem.id;
 
     await checkoutAndGenerate([orderId]);
@@ -86,6 +100,10 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error(`admin-etiqueta erro:`, err.response ?? err.message);
+    await notifyShipmentError({
+      ...context,
+      error: { message: err.message, details: err.response ?? null },
+    });
     return res.status(500).json({ error: err.message, me_response: err.response });
   }
 }
