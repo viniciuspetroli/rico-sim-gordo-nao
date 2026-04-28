@@ -1,0 +1,20 @@
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+
+# Rascunhos de design (não usados pelo site)
+*.jsx
+design-canvas.jsx
+v1-manifesto.jsx
+v2-street.jsx
+v3-minimal.jsx
+
+# Prints e arquivos pesados de referência
+uploads/
+
+# HTML alternativo (versão antiga)
+Rico Sim Gordo Nao LP.html

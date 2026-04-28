@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>rico sim, gordo não — entre pro movimento</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="rico sim, gordo não — um movimento. A primeira riqueza é o corpo. Boné bordado, R$50 com envio incluso." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@400;500;600;700&family=Archivo:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1f12;
+    --bg-deep: #0e1209;
+    --bg-card: #1f1612;
+    --line: #2a3320;
+    --cream: #e8dec3;
+    --cream-dim: #d4cba8;
+    --moss: #3d4a2a;
+    --moss-light: #a8b890;
+    --gold: #c4a86b;
+    --mute: #7a8467;
+    --mute-warm: #5a6147;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--cream);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ─── Scroll progress bar ─── */
+  .scroll-progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: var(--gold);
+    width: 0%;
+    z-index: 100;
+    transition: width 0.05s linear;
+  }
+
+  /* ─── Reveal on scroll ─── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .reveal.in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.25s; }
+  .reveal-delay-3 { transition-delay: 0.4s; }
+  .reveal-delay-4 { transition-delay: 0.55s; }
+
+  /* Hero title letter-by-letter — pure CSS */
+  @keyframes ch-in {
+    from { opacity: 0; transform: translateY(60px) rotateX(-40deg); }
+    to { opacity: 1; transform: translateY(0) rotateX(0deg); }
+  }
+  .hero h1 .ch {
+    display: inline-block;
+    opacity: 0;
+    animation: ch-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  }
+  .hero h1 .ch:nth-child(1)  { animation-delay: 0.15s; }
+  .hero h1 .ch:nth-child(2)  { animation-delay: 0.20s; }
+  .hero h1 .ch:nth-child(3)  { animation-delay: 0.25s; }
+  .hero h1 .ch:nth-child(4)  { animation-delay: 0.30s; }
+  .hero h1 .ch:nth-child(5)  { animation-delay: 0.40s; }
+  .hero h1 .ch:nth-child(6)  { animation-delay: 0.45s; }
+  .hero h1 .ch:nth-child(7)  { animation-delay: 0.50s; }
+  .hero h1 .ch:nth-child(8)  { animation-delay: 0.55s; }
+  .hero h1 .accent .ch:nth-child(1) { animation-delay: 0.65s; }
+  .hero h1 .accent .ch:nth-child(2) { animation-delay: 0.72s; }
+  .hero h1 .accent .ch:nth-child(3) { animation-delay: 0.79s; }
+  .hero h1 .accent .ch:nth-child(4) { animation-delay: 0.86s; }
+  .hero h1 .accent .ch:nth-child(5) { animation-delay: 0.93s; }
+  .hero h1 .ch:nth-last-child(1)  { animation-delay: 1.10s; }
+  .hero h1 .ch:nth-last-child(2)  { animation-delay: 1.05s; }
+  .hero h1 .ch:nth-last-child(3)  { animation-delay: 1.00s; }
+  .hero h1 .ch:nth-last-child(4)  { animation-delay: 0.95s; }
+
+  /* Stat number rolling */
+  .stat-num-roll {
+    display: inline-block;
+    overflow: hidden;
+    height: 1em;
+    vertical-align: top;
+    line-height: 1;
+  }
+  .stat-num-roll .digits {
+    display: inline-flex;
+    flex-direction: column;
+    transition: transform 1.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .stat-num-roll .digits span {
+    display: block;
+    height: 1em;
+    line-height: 1;
+  }
+
+  /* Bone scale-in */
+  .bone-frame {
+    transition: transform 1s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 1s ease;
+  }
+  .bone-frame.reveal { transform: scale(0.92); opacity: 0; }
+  .bone-frame.reveal.in { transform: scale(1); opacity: 1; }
+
+  /* Price stamp */
+  .price-big.stamp {
+    opacity: 0;
+    transform: scale(1.4) rotate(-3deg);
+    transition: opacity 0.5s ease, transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .price-big.stamp.in {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+
+  /* CTA button pulse */
+  @keyframes pulse-gold {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(196, 168, 107, 0.4); }
+    50% { box-shadow: 0 0 0 14px rgba(196, 168, 107, 0); }
+  }
+  .cta-btn { animation: pulse-gold 2.4s ease-in-out infinite; }
+
+  /* Meaning cards stagger in */
+  .meaning-card.reveal { transform: translateY(50px); }
+
+  /* BORA? title bounce */
+  @keyframes bora-in {
+    0% { transform: translateY(80px) scale(0.9); opacity: 0; }
+    60% { transform: translateY(-8px) scale(1.02); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  .form-section h2.reveal.in { animation: bora-in 1s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
+  .form-section h2.reveal { opacity: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    html { scroll-behavior: auto; }
+  }
+  img { max-width: 100%; display: block; }
+  input, select, button { font-family: inherit; }
+  input::placeholder { color: rgba(232, 222, 195, 0.35); }
+
+  /* Marquee */
+  .marquee {
+    background: var(--moss);
+    color: var(--cream);
+    padding: 14px 0;
+    overflow: hidden;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--line);
+  }
+  .marquee-track {
+    display: inline-flex;
+    animation: scroll 40s linear infinite;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  .marquee-track span { padding-right: 40px; }
+  @keyframes scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* Layout */
+  .container { max-width: 1320px; margin: 0 auto; padding: 0 64px; }
+  @media (max-width: 800px) { .container { padding: 0 24px; } }
+
+  header.site {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 28px 64px;
+    border-bottom: 1px solid var(--line);
+  }
+  @media (max-width: 800px) { header.site { padding: 22px 24px; } }
+  .logo {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 20px;
+    font-style: italic;
+  }
+  .nav { display: flex; gap: 36px; font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--moss-light); }
+  .nav a { color: inherit; text-decoration: none; transition: color .15s; }
+  .nav a:hover { color: var(--cream); }
+  @media (max-width: 700px) { .nav { display: none; } }
+
+  /* Hero */
+  .hero {
+    padding: 80px 64px 100px;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+  @media (max-width: 980px) {
+    .hero { grid-template-columns: 1fr; padding: 56px 24px 72px; gap: 40px; }
+  }
+  .hero h1 {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: clamp(72px, 13vw, 168px);
+    line-height: 0.85;
+    letter-spacing: -4px;
+    margin: 0;
+    text-transform: uppercase;
+  }
+  .hero .accent {
+    color: var(--gold);
+    font-style: italic;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 400;
+    text-transform: lowercase;
+    letter-spacing: -2px;
+  }
+  .hero p.lead {
+    margin-top: 36px;
+    max-width: 480px;
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--moss-light);
+  }
+  .hero-tags {
+    display: flex; gap: 16px; flex-wrap: wrap; margin-top: 36px;
+    font-family: ui-monospace, monospace;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--mute);
+  }
+
+  /* Boné placeholder card */
+  .bone-frame {
+    width: 100%;
+    aspect-ratio: 4/5;
+    background: var(--bg-deep);
+    border: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .bone-frame .label {
+    position: absolute;
+    bottom: 14px; left: 16px;
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--mute-warm);
+  }
+  .bone-frame .corner {
+    position: absolute;
+    top: 14px; right: 16px;
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--mute-warm);
+  }
+  .bone-frame img {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+
+  /* Stats bar */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: var(--bg-deep);
+  }
+  @media (max-width: 800px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stats > div {
+    padding: 32px 40px;
+    border-right: 1px solid var(--line);
+  }
+  @media (max-width: 800px) {
+    .stats > div { padding: 24px; }
+    .stats > div:nth-child(2n) { border-right: none; }
+    .stats > div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  }
+  .stats > div:last-child { border-right: none; }
+  .stats .num {
+    font-family: 'Archivo', sans-serif;
+    font-size: 48px;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -1px;
+  }
+  .stats .lbl {
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--mute);
+    margin-top: 8px;
+  }
+
+  /* Sections */
+  section.block { padding: 120px 64px; border-bottom: 1px solid var(--line); }
+  @media (max-width: 800px) { section.block { padding: 72px 24px; } }
+  .eyebrow {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--mute);
+    margin-bottom: 24px;
+  }
+  .display {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    line-height: 0.9;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: -2px;
+  }
+  .display .ital {
+    color: var(--gold);
+    font-style: italic;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 400;
+    text-transform: lowercase;
+  }
+
+  /* Manifesto */
+  .manifesto-grid {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: 80px;
+  }
+  @media (max-width: 900px) {
+    .manifesto-grid { grid-template-columns: 1fr; gap: 40px; }
+  }
+  .manifesto-grid h2 { font-size: clamp(48px, 7vw, 96px); color: var(--moss); }
+  .manifesto-body { font-size: 21px; line-height: 1.5; color: var(--cream-dim); }
+  .manifesto-body p { margin: 0 0 20px; }
+  .manifesto-body .em { color: var(--gold); font-style: italic; }
+  .manifesto-body .punch { font-weight: 600; color: var(--cream); font-size: 22px; }
+
+  /* Significado */
+  .meaning-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1px solid var(--line);
+    margin-top: 56px;
+  }
+  @media (max-width: 800px) {
+    .meaning-grid { grid-template-columns: 1fr; }
+  }
+  .meaning-card {
+    padding: 48px;
+    border-right: 1px solid var(--line);
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: var(--bg-deep);
+  }
+  @media (max-width: 800px) {
+    .meaning-card { border-right: none; border-bottom: 1px solid var(--line); min-height: auto; }
+  }
+  .meaning-card:last-child { border-right: none; border-bottom: none; }
+  .meaning-card .num {
+    font-family: 'Archivo', sans-serif;
+    font-size: 56px;
+    font-weight: 900;
+    color: var(--moss);
+    margin: 0;
+    line-height: 1;
+  }
+  .meaning-card h3 {
+    font-family: 'Archivo', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    text-transform: uppercase;
+    letter-spacing: -0.3px;
+  }
+  .meaning-card p {
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--moss-light);
+    margin: 0;
+  }
+
+  /* Variantes */
+  .variants {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--line);
+  }
+  @media (max-width: 900px) {
+    .variants { grid-template-columns: 1fr; }
+  }
+  .variant-block {
+    padding: 64px;
+    min-height: 720px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    justify-content: space-between;
+    position: relative;
+  }
+  @media (max-width: 800px) { .variant-block { padding: 40px 24px; min-height: auto; } }
+  .variant-verde { background: var(--bg-deep); }
+  .variant-marrom { background: var(--bg-card); border-left: 1px solid var(--line); }
+  @media (max-width: 900px) { .variant-marrom { border-left: none; border-top: 1px solid var(--line); } }
+  .variant-block h3 {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: clamp(48px, 6vw, 72px);
+    line-height: 0.9;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: -2px;
+  }
+  .variant-block .desc {
+    margin-top: 16px;
+    max-width: 360px;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .variant-verde .desc { color: var(--moss-light); }
+  .variant-marrom .desc { color: var(--gold); }
+
+  /* Preço */
+  .price {
+    padding: 120px 64px;
+    background: var(--gold);
+    color: #1a1f12;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  @media (max-width: 800px) { .price { padding: 80px 24px; } }
+  .price-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    align-items: center;
+  }
+  @media (max-width: 900px) { .price-grid { grid-template-columns: 1fr; gap: 32px; } }
+  .price-big {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: clamp(140px, 18vw, 240px);
+    line-height: 0.85;
+    margin: 0;
+    color: #1a1f12;
+    letter-spacing: -8px;
+  }
+  .price-sub {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 30px;
+    margin-top: 16px;
+    color: #3d2e15;
+  }
+  .price-pills {
+    margin-top: 32px;
+    display: flex; gap: 10px; flex-wrap: wrap;
+    font-family: ui-monospace, monospace;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  }
+  .price-pills span {
+    padding: 8px 14px;
+    background: #1a1f12;
+    color: var(--gold);
+  }
+
+  /* Form */
+  .form-section { padding: 100px 64px 120px; }
+  @media (max-width: 800px) { .form-section { padding: 64px 24px 80px; } }
+  .form-section h2 {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: clamp(80px, 14vw, 160px);
+    line-height: 0.85;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: -4px;
+  }
+  .form-section p.intro {
+    color: var(--moss-light);
+    font-size: 18px;
+    margin-top: 20px;
+    max-width: 540px;
+    line-height: 1.55;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 40px;
+  }
+  @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } }
+  .form-grid input, .form-grid select {
+    width: 100%;
+    padding: 20px 24px;
+    background: var(--bg-deep);
+    border: 1px solid var(--line);
+    color: var(--cream);
+    font-size: 15px;
+    border-radius: 0;
+    outline: none;
+  }
+  .form-grid select { appearance: none; -webkit-appearance: none; cursor: pointer;
+    background-image: linear-gradient(45deg, transparent 50%, var(--moss-light) 50%), linear-gradient(135deg, var(--moss-light) 50%, transparent 50%);
+    background-position: calc(100% - 24px) 50%, calc(100% - 18px) 50%;
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+  }
+  .form-grid input:focus, .form-grid select:focus { border-color: var(--gold); }
+  .form-grid .full { grid-column: 1 / -1; }
+
+  .cta-btn {
+    margin-top: 16px;
+    padding: 24px 40px;
+    background: var(--gold);
+    color: #1a1f12;
+    border: none;
+    font-family: 'Archivo', sans-serif;
+    font-size: 16px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 800;
+    cursor: pointer;
+    width: 100%;
+    transition: background .15s, transform .15s;
+  }
+  .cta-btn:hover { background: #d6bb7a; transform: translateY(-1px); }
+  .cta-btn:active { transform: translateY(0); }
+
+  .form-note {
+    margin-top: 16px;
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--mute);
+    text-align: center;
+  }
+
+  /* Footer */
+  footer {
+    padding: 32px 64px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--mute-warm);
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  @media (max-width: 800px) { footer { padding: 24px; } }
+
+  /* Helpers */
+  .hairline { display: inline-block; height: 1px; background: var(--line); flex: 1; min-width: 40px; }
+  .row { display: flex; align-items: center; gap: 14px; }
+
+  /* SVG boné */
+  .bone-svg { width: 78%; height: auto; position: relative; z-index: 1; }
+  .bone-bg-pattern {
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 8px);
+  }
+</style>
+</head>
+<body>
+
+<div class="scroll-progress" id="scroll-progress"></div>
+
+<!-- MARQUEE -->
+<div class="marquee">
+  <div class="marquee-track">
+    <span>RICO SIM, GORDO NÃO &nbsp; ✦ &nbsp; UM MOVIMENTO &nbsp; ✦ &nbsp; LOTE 01 ABERTO &nbsp; ✦ &nbsp; ENVIO PRO BRASIL TODO &nbsp; ✦ &nbsp;</span>
+    <span>RICO SIM, GORDO NÃO &nbsp; ✦ &nbsp; UM MOVIMENTO &nbsp; ✦ &nbsp; LOTE 01 ABERTO &nbsp; ✦ &nbsp; ENVIO PRO BRASIL TODO &nbsp; ✦ &nbsp;</span>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="site">
+  <div class="logo">rico sim, gordo não</div>
+  <nav class="nav">
+    <a href="#manifesto">Manifesto</a>
+    <a href="#bone">O boné</a>
+    <a href="#pedir">Pedir</a>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div>
+    <h1 id="hero-title">
+      <span class="ch">R</span><span class="ch">I</span><span class="ch">C</span><span class="ch">O</span><br/>
+      <span class="ch">S</span><span class="ch">I</span><span class="ch">M</span><span class="ch">,</span><br/>
+      <span class="accent"><span class="ch">g</span><span class="ch">o</span><span class="ch">r</span><span class="ch">d</span><span class="ch">o</span></span><br/>
+      <span class="ch">N</span><span class="ch">Ã</span><span class="ch">O</span><span class="ch">.</span>
+    </h1>
+    <p class="lead reveal reveal-delay-2">
+      Não é dieta. Não é academia. É um voto silencioso, bordado num boné, que você faz com você mesmo todo dia que coloca na cabeça.
+    </p>
+    <div class="hero-tags reveal reveal-delay-3">
+      <span>● Lote 01</span>
+      <span>● 2 cores</span>
+      <span>● R$50 com envio</span>
+    </div>
+  </div>
+  <div class="reveal reveal-delay-2">
+    <!-- Troque pelo seu <img src="assets/sua-foto.jpg" /> dentro de .bone-frame -->
+    <div class="bone-frame">
+      <div class="bone-bg-pattern"></div>
+      <svg class="bone-svg" viewBox="0 0 400 320">
+        <ellipse cx="200" cy="245" rx="180" ry="32" fill="#3d4a2a" />
+        <path d="M 60 240 Q 60 100 200 80 Q 340 100 340 240 Z" fill="#3d4a2a" />
+        <path d="M 60 240 Q 60 100 200 80 Q 340 100 340 240 Z" fill="rgba(0,0,0,0.18)" style="mix-blend-mode:multiply" />
+        <path d="M 90 200 Q 90 110 200 92 Q 230 95 250 105" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="20" />
+        <text x="200" y="155" text-anchor="middle" font-family="Cormorant Garamond, serif" font-style="italic" font-size="22" fill="#f1ead9" font-weight="500">rico sim</text>
+        <text x="200" y="195" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="32" fill="#f1ead9" font-weight="600" letter-spacing="2">GORDO NÃO</text>
+        <circle cx="200" cy="92" r="6" fill="#3d4a2a" stroke="rgba(0,0,0,0.2)" />
+      </svg>
+      <div class="label">[ foto principal · troque aqui ]</div>
+      <div class="corner">01 / 02</div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="reveal reveal-delay-1"><p class="num"><span class="stat-prefix">R$</span><span class="stat-num-roll" data-target="50" data-duration="1800"><span class="digits"><span>0</span></span></span></p><div class="lbl">com envio incluído</div></div>
+  <div class="reveal reveal-delay-2"><p class="num"><span class="stat-num-roll" data-target="02" data-pad="2" data-duration="1400"><span class="digits"><span>00</span></span></span></p><div class="lbl">cores disponíveis</div></div>
+  <div class="reveal reveal-delay-3"><p class="num"><span class="stat-num-roll" data-target="100" data-duration="2000"><span class="digits"><span>0</span></span></span><span class="stat-suffix">%</span></p><div class="lbl">algodão escovado</div></div>
+  <div class="reveal reveal-delay-4"><p class="num"><span class="stat-letters" data-target="BR">--</span></p><div class="lbl">produzido no brasil</div></div>
+</div>
+
+<!-- MANIFESTO -->
+<section id="manifesto" class="block">
+  <div class="manifesto-grid">
+    <div class="reveal">
+      <div class="eyebrow">● 01 / Manifesto</div>
+      <h2 class="display">A primeira<br/>riqueza<br/>é o <span class="ital">corpo.</span></h2>
+    </div>
+    <div class="manifesto-body">
+      <p class="reveal reveal-delay-1">
+        Eu vim de baixo. Aprendi a correr atrás de dinheiro a qualquer custo — e por muito tempo, achei que <span class="em">"qualquer custo"</span> não incluía o meu próprio corpo.
+      </p>
+      <p class="reveal reveal-delay-2">Incluía. Sempre incluiu.</p>
+      <p class="reveal reveal-delay-3">
+        A virada veio quando entendi que <span class="em">a riqueza de saúde é a primeira riqueza</span>. Sem ela, nenhuma das outras se sustenta. Saúde traz energia. Energia traz foco. Foco traz dinheiro, relacionamento, paz. Nessa ordem.
+      </p>
+      <p class="punch reveal reveal-delay-4">
+        Rico sim, gordo não nasceu disso. Um lembrete na cabeça. Todo dia.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- SIGNIFICADO -->
+<section id="bone" class="block">
+  <div class="eyebrow reveal">● 02 / Por que o boné</div>
+  <h2 class="display reveal reveal-delay-1" style="font-size: clamp(48px, 7vw, 80px);">
+    O que você veste,<br/>você <span class="ital">lembra.</span>
+  </h2>
+  <div class="meaning-grid">
+    <div class="meaning-card reveal reveal-delay-1">
+      <p class="num">01</p>
+      <div>
+        <h3>Voto silencioso</h3>
+        <p>Cada vez que você coloca, é um sim pra disciplina e um não pro confortinho. Sem precisar dizer nada.</p>
+      </div>
+    </div>
+    <div class="meaning-card reveal reveal-delay-2">
+      <p class="num">02</p>
+      <div>
+        <h3>Tribo invisível</h3>
+        <p>Vai cruzar com outros na rua. E vai saber, na hora, que a pessoa joga o mesmo jogo que você.</p>
+      </div>
+    </div>
+    <div class="meaning-card reveal reveal-delay-3">
+      <p class="num">03</p>
+      <div>
+        <h3>Filtro</h3>
+        <p>Quem zoa, não é da tribo. Quem entende, fica. Simples assim.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VARIANTES -->
+<section class="variants">
+  <div class="variant-block variant-verde">
+    <div class="reveal">
+      <div class="eyebrow">Cor 01 / Verde militar</div>
+      <h3>VERDE.</h3>
+      <p class="desc">A cor original. Algodão escovado, bordado branco-cru, aba curva.</p>
+    </div>
+    <div class="bone-frame reveal reveal-delay-2">
+      <div class="bone-bg-pattern"></div>
+      <svg class="bone-svg" viewBox="0 0 400 320">
+        <ellipse cx="200" cy="245" rx="180" ry="32" fill="#3d4a2a" />
+        <path d="M 60 240 Q 60 100 200 80 Q 340 100 340 240 Z" fill="#3d4a2a" />
+        <path d="M 60 240 Q 60 100 200 80 Q 340 100 340 240 Z" fill="rgba(0,0,0,0.18)" style="mix-blend-mode:multiply" />
+        <path d="M 90 200 Q 90 110 200 92 Q 230 95 250 105" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="20" />
+        <text x="200" y="155" text-anchor="middle" font-family="Cormorant Garamond, serif" font-style="italic" font-size="22" fill="#f1ead9" font-weight="500">rico sim</text>
+        <text x="200" y="195" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="32" fill="#f1ead9" font-weight="600" letter-spacing="2">GORDO NÃO</text>
+        <circle cx="200" cy="92" r="6" fill="#3d4a2a" stroke="rgba(0,0,0,0.2)" />
+      </svg>
+      <div class="label">[ verde militar ]</div>
+    </div>
+  </div>
+  <div class="variant-block variant-marrom">
+    <div class="reveal">
+      <div class="eyebrow" style="color: #a89067;">Cor 02 / Marrom terra</div>
+      <h3>MARROM.</h3>
+      <p class="desc">Pra quem prefere algo mais terra. Mesmo bordado, mesmo voto.</p>
+    </div>
+    <div class="bone-frame reveal reveal-delay-2">
+      <div class="bone-bg-pattern"></div>
+      <svg class="bone-svg" viewBox="0 0 400 320">
+        <ellipse cx="200" cy="245" rx="180" ry="32" fill="#4a3528" />
+        <path d="M 60 240 Q 60 100 200 80 Q 340 100 340 240 Z" fill="#4a3528" />
+        <path d="M 60 240 Q 60 100 200 80 Q 340 100 340 240 Z" fill="rgba(0,0,0,0.18)" style="mix-blend-mode:multiply" />
+        <path d="M 90 200 Q 90 110 200 92 Q 230 95 250 105" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="20" />
+        <text x="200" y="155" text-anchor="middle" font-family="Cormorant Garamond, serif" font-style="italic" font-size="22" fill="#f1ead9" font-weight="500">rico sim</text>
+        <text x="200" y="195" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="32" fill="#f1ead9" font-weight="600" letter-spacing="2">GORDO NÃO</text>
+        <circle cx="200" cy="92" r="6" fill="#4a3528" stroke="rgba(0,0,0,0.2)" />
+      </svg>
+      <div class="label">[ marrom terra ]</div>
+    </div>
+  </div>
+</section>
+
+<!-- PREÇO -->
+<section class="price">
+  <div class="eyebrow reveal" style="color: #3d2e15;">● 03 / Os R$50</div>
+  <div class="price-grid" style="margin-top: 24px;">
+    <div>
+      <p class="price-big stamp">R$50</p>
+      <p class="price-sub reveal reveal-delay-2">já com o envio incluído.</p>
+    </div>
+    <div class="reveal reveal-delay-3">
+      <p style="font-size: 20px; line-height: 1.55; color: #1a1f12; max-width: 480px; font-weight: 500; margin: 0;">
+        Não é venda. É um valor simbólico pra cobrir produção e envio até a sua porta.
+      </p>
+      <p style="font-size: 20px; line-height: 1.55; color: #3d2e15; max-width: 480px; margin: 16px 0 0;">
+        Quem tá aqui, tá porque <em>quer estar.</em>
+      </p>
+      <div class="price-pills">
+        <span>PIX</span>
+        <span>CARTÃO</span>
+        <span>À VISTA</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA / FORM -->
+<section id="pedir" class="form-section">
+  <div class="eyebrow reveal">● 04 / Entrar pro movimento</div>
+  <h2 class="reveal">BORA?</h2>
+  <p class="intro reveal reveal-delay-1">
+    Preenche aí embaixo. Você recebe o link de pagamento no seu WhatsApp e o boné chega na semana seguinte.
+  </p>
+  <form class="form-grid reveal reveal-delay-2" id="pedido-form" onsubmit="enviarPedido(event)">
+    <input name="nome" placeholder="Seu nome" required />
+    <input name="whatsapp" placeholder="WhatsApp (com DDD)" required />
+    <select name="cor" required>
+      <option value="">Cor do boné</option>
+      <option>Verde militar</option>
+      <option>Marrom terra</option>
+    </select>
+    <input name="cep" placeholder="CEP" required />
+    <input class="full" name="endereco" placeholder="Endereço completo (rua, número, complemento, cidade)" required />
+    <button type="submit" class="cta-btn full">★ Quero meu boné — R$50</button>
+  </form>
+  <p class="form-note">Pagamento via Pix · Seus dados ficam só comigo</p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span>rico sim, gordo não</span>
+  <span>um movimento · 2026</span>
+  <span>lote 01</span>
+</footer>
+
+<script>
+  // ───── Smooth scroll com velocidade controlada ─────
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', e => {
+      const target = document.querySelector(link.getAttribute('href'));
+      if (!target) return;
+      e.preventDefault();
+      const start = window.scrollY;
+      const end = target.getBoundingClientRect().top + window.scrollY - 20;
+      const duration = Math.min(1600, Math.max(800, Math.abs(end - start) * 0.6));
+      const startTime = performance.now();
+      const ease = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2; // easeInOutCubic
+
+      function step(now) {
+        const elapsed = now - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        window.scrollTo(0, start + (end - start) * ease(t));
+        if (t < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  });
+
+  // ───── Scroll progress bar ─────
+  const progress = document.getElementById('scroll-progress');
+  const updateProgress = () => {
+    const h = document.documentElement;
+    const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+    progress.style.width = pct + '%';
+  };
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  updateProgress();
+
+  // ───── Reveal on scroll (IntersectionObserver) ─────
+  const revealObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in');
+        revealObs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+  // ───── Hero title — handled by pure CSS, nothing here ─────
+
+  // ───── Stat number rolling (slot machine) ─────
+  function rollNumber(el) {
+    const target = parseInt(el.dataset.target, 10);
+    const pad = parseInt(el.dataset.pad || '0', 10);
+    const duration = parseInt(el.dataset.duration || '1600', 10);
+    const digits = el.querySelector('.digits');
+    const targetStr = pad ? String(target).padStart(pad, '0') : String(target);
+
+    // Build a column of numbers cycling 0 → target
+    // For each digit position, animate from random to target value.
+    // Simpler: render full numbers from 0 to target stacked, then translate up.
+    const frames = [];
+    const steps = 24;
+    for (let i = 0; i <= steps; i++) {
+      const v = Math.round((i / steps) * target);
+      const s = pad ? String(v).padStart(pad, '0') : String(v);
+      frames.push(s);
+    }
+    digits.innerHTML = frames.map(f => `<span>${f}</span>`).join('');
+    requestAnimationFrame(() => {
+      digits.style.transform = `translateY(-${steps}em)`;
+    });
+  }
+
+  function rollLetters(el) {
+    const target = el.dataset.target;
+    const chars = '█ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const duration = 900;
+    const steps = 18;
+    const startTime = performance.now();
+    function step(now) {
+      const t = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      let out = '';
+      for (let i = 0; i < target.length; i++) {
+        if (eased > (i + 1) / target.length * 0.7) {
+          out += target[i];
+        } else {
+          out += chars[Math.floor(Math.random() * chars.length)];
+        }
+      }
+      el.textContent = out;
+      if (t < 1) requestAnimationFrame(step);
+      else el.textContent = target;
+    }
+    requestAnimationFrame(step);
+  }
+
+  const statsObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        if (el.classList.contains('stat-num-roll')) rollNumber(el);
+        else if (el.classList.contains('stat-letters')) rollLetters(el);
+        statsObs.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  document.querySelectorAll('.stat-num-roll, .stat-letters').forEach(el => statsObs.observe(el));
+
+  // ───── Price stamp ─────
+  const priceObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in');
+        priceObs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  document.querySelectorAll('.price-big.stamp').forEach(el => priceObs.observe(el));
+
+  // ───── Marquee pause on hover ─────
+  document.querySelector('.marquee').addEventListener('mouseenter', e => {
+    e.currentTarget.querySelector('.marquee-track').style.animationPlayState = 'paused';
+  });
+  document.querySelector('.marquee').addEventListener('mouseleave', e => {
+    e.currentTarget.querySelector('.marquee-track').style.animationPlayState = 'running';
+  });
+
+  // ───── Form submit ─────
+  function enviarPedido(e) {
+    e.preventDefault();
+    const f = e.target;
+    const nome = f.nome.value;
+    const wa = f.whatsapp.value.replace(/\D/g, '');
+    const cor = f.cor.value;
+    const cep = f.cep.value;
+    const end = f.endereco.value;
+
+    // CONFIGURE: troque pelo SEU WhatsApp (formato: 5511999999999)
+    const MEU_WHATSAPP = '5511999999999';
+
+    const msg = encodeURIComponent(
+      `Bora! Quero meu boné rico sim, gordo não.\n\n` +
+      `Nome: ${nome}\n` +
+      `Cor: ${cor}\n` +
+      `CEP: ${cep}\n` +
+      `Endereço: ${end}\n` +
+      `WhatsApp: ${wa}\n\n` +
+      `Me manda o link de pagamento. Valeu!`
+    );
+
+    window.open(`https://wa.me/${MEU_WHATSAPP}?text=${msg}`, '_blank');
+  }
+</script>
+
+</body>
+</html>
