@@ -4,8 +4,10 @@
 
 import crypto from 'node:crypto';
 import { buildAuthorizeUrl } from './_lib/melhor-envio.js';
+import { ME_ENV, ME_BASE_URL } from './_lib/config.js';
 
 export default function handler(req, res) {
+  console.log(`[me-auth] ME_ENV raw=${JSON.stringify(process.env.ME_ENV)} resolved=${ME_ENV} base=${ME_BASE_URL} client_id=${process.env.ME_CLIENT_ID}`);
   if (!process.env.ME_CLIENT_ID || !process.env.ME_CLIENT_SECRET) {
     return res.status(500).json({ error: 'ME_CLIENT_ID e ME_CLIENT_SECRET precisam estar configurados em env vars do Vercel' });
   }
