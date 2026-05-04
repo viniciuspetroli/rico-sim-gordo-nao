@@ -677,6 +677,115 @@
     position: absolute; inset: 0;
     background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 8px);
   }
+
+  /* ─── ESGOTADO ─── */
+  .sold-out-badge {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) rotate(-8deg);
+    background: var(--bg-deep);
+    color: var(--gold);
+    padding: 14px 32px;
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: 28px;
+    letter-spacing: 4px;
+    border: 2px solid var(--gold);
+    z-index: 5;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .sold-out-frame img { opacity: 0.55; filter: grayscale(0.3); }
+  .ctc-soldout { text-decoration: line-through; opacity: 0.55; }
+
+  /* ─── Modal waitlist ─── */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(14, 18, 9, 0.85);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .modal-backdrop.active { opacity: 1; pointer-events: auto; }
+  .modal-content {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    padding: 40px 32px 32px;
+    max-width: 440px;
+    width: 90%;
+    position: relative;
+    transform: translateY(20px);
+    transition: transform 0.25s ease;
+  }
+  .modal-backdrop.active .modal-content { transform: translateY(0); }
+  .modal-close {
+    position: absolute;
+    top: 12px; right: 16px;
+    background: none;
+    border: none;
+    color: var(--cream);
+    font-size: 28px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px 8px;
+  }
+  .modal-content h3 {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    font-size: 28px;
+    margin: 0 0 12px;
+    color: var(--cream);
+    line-height: 1;
+  }
+  .modal-content .modal-desc {
+    color: var(--moss-light);
+    margin: 0 0 24px;
+    line-height: 1.5;
+    font-size: 14px;
+  }
+  .modal-content input {
+    display: block;
+    width: 100%;
+    background: var(--bg-deep);
+    border: 1px solid var(--line);
+    color: var(--cream);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    font-size: 15px;
+    box-sizing: border-box;
+  }
+  .modal-content input:focus { outline: none; border-color: var(--gold); }
+  .modal-content button[type="submit"] {
+    background: var(--gold);
+    color: var(--bg);
+    border: none;
+    padding: 16px 24px;
+    width: 100%;
+    font-family: 'Archivo', sans-serif;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 13px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background .15s;
+  }
+  .modal-content button[type="submit"]:hover:not(:disabled) { background: #d6bb7a; }
+  .modal-content button[type="submit"]:disabled { opacity: 0.5; cursor: wait; }
+  .modal-success, .modal-error {
+    text-align: center;
+    padding: 16px 0;
+    font-size: 16px;
+  }
+  .modal-success { color: var(--gold); }
+  .modal-error { color: #d97a7a; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -714,7 +823,7 @@
     </p>
     <div class="hero-tags reveal reveal-delay-3">
       <span>● Lote 01</span>
-      <span>● 2 cores</span>
+      <span style="color: var(--gold);">● Verde esgotado · Marrom disponível</span>
       <span>● R$50 com envio</span>
     </div>
   </div>
@@ -795,15 +904,16 @@
     <div class="reveal">
       <div class="eyebrow">Cor 01 / Verde militar</div>
       <h3>VERDE.</h3>
-      <p class="desc">A cor original. Algodão escovado, bordado branco-cru, aba curva.</p>
-      <a href="#" class="variant-buy" data-stripe="verde">
-        <span>Levar o verde</span>
-        <span class="price-tag">R$50 →</span>
+      <p class="desc">A cor original. Algodão escovado, bordado branco-cru, aba curva. Lote 01 esgotou.</p>
+      <a href="#" class="variant-buy" data-notify="verde">
+        <span>Me avise quando voltar</span>
+        <span class="price-tag">→</span>
       </a>
     </div>
-    <div class="bone-frame reveal reveal-delay-2">
+    <div class="bone-frame reveal reveal-delay-2 sold-out-frame">
       <div class="bone-bg-pattern"></div>
-      <img src="images/bone-verde.png" alt="Boné rico sim, gordo não — verde militar" />
+      <img src="images/bone-verde.png" alt="Boné rico sim, gordo não — verde militar (esgotado)" />
+      <div class="sold-out-badge">ESGOTADO</div>
       <div class="label">[ verde militar ]</div>
     </div>
   </div>
@@ -857,13 +967,13 @@
     Escolhe sua cor. Você é levado pro checkout seguro do Stripe — preenche endereço e paga em menos de 1 minuto. O boné chega na semana seguinte.
   </p>
   <div class="dual-cta reveal reveal-delay-2">
-    <a href="https://buy.stripe.com/3cIfZh25Va6I4Bk9AK7EQ00" data-stripe="verde">
+    <a href="#" data-notify="verde">
       <div class="ctc-swatch" style="background: #3d4a2a;"></div>
-      <div class="ctc-eyebrow">Cor 01</div>
+      <div class="ctc-eyebrow">Cor 01 · Esgotado</div>
       <p class="ctc-title">Verde militar</p>
       <div class="ctc-row">
-        <span class="ctc-price">R$50</span>
-        <span class="ctc-arrow">Comprar →</span>
+        <span class="ctc-price ctc-soldout">R$50</span>
+        <span class="ctc-arrow">Me avise →</span>
       </div>
     </a>
     <a href="https://buy.stripe.com/fZuaEXaCr7YA7Nw7sC7EQ01" data-stripe="marrom">
@@ -878,6 +988,27 @@
   </div>
   <p class="form-note">Pagamento seguro via Stripe · Cartão, Pix · Envio incluso · Brasil todo</p>
 </section>
+
+<!-- WAITLIST MODAL -->
+<div class="modal-backdrop" id="notify-modal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal-content">
+    <button class="modal-close" type="button" aria-label="Fechar">×</button>
+    <div class="notify-form-wrap">
+      <h3>Me avise quando voltar</h3>
+      <p class="modal-desc">O lote 01 do verde esgotou. Deixa seu nome e e-mail que te aviso assim que o próximo lote estiver disponível.</p>
+      <form id="notify-form">
+        <input name="name" type="text" placeholder="Seu nome" required autocomplete="name" />
+        <input name="email" type="email" placeholder="Seu melhor e-mail" required autocomplete="email" />
+        <input type="hidden" name="color" value="verde" />
+        <button type="submit">Quero ser avisado</button>
+        <div class="modal-error" id="notify-error" hidden></div>
+      </form>
+    </div>
+    <div class="modal-success" id="notify-success" hidden>
+      ✓ Pronto, te aviso quando voltar.
+    </div>
+  </div>
+</div>
 
 <!-- FOOTER -->
 <footer>
@@ -1033,10 +1164,69 @@
     });
   });
 
-  // ───── Form submit (legado, não usado mais) ─────
-  function enviarPedido(e) {
-    e.preventDefault();
+  // ───── Waitlist (botões "me avise quando voltar") ─────
+  const notifyModal = document.getElementById('notify-modal');
+  const notifyForm = document.getElementById('notify-form');
+  const notifyError = document.getElementById('notify-error');
+  const notifySuccess = document.getElementById('notify-success');
+  const notifyFormWrap = document.querySelector('.notify-form-wrap');
+
+  function openNotifyModal(color) {
+    notifyForm.color.value = color;
+    notifyError.hidden = true; notifyError.textContent = '';
+    notifySuccess.hidden = true;
+    notifyFormWrap.hidden = false;
+    notifyForm.reset();
+    notifyForm.color.value = color; // reset apaga, então preenche de novo
+    notifyModal.classList.add('active');
+    notifyModal.setAttribute('aria-hidden', 'false');
+    setTimeout(() => notifyForm.name.focus(), 250);
   }
+  function closeNotifyModal() {
+    notifyModal.classList.remove('active');
+    notifyModal.setAttribute('aria-hidden', 'true');
+  }
+
+  document.querySelectorAll('[data-notify]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.preventDefault();
+      openNotifyModal(el.dataset.notify);
+    });
+  });
+  notifyModal.querySelector('.modal-close').addEventListener('click', closeNotifyModal);
+  notifyModal.addEventListener('click', e => {
+    if (e.target === notifyModal) closeNotifyModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && notifyModal.classList.contains('active')) closeNotifyModal();
+  });
+
+  notifyForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const submitBtn = notifyForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true; submitBtn.textContent = 'Enviando...';
+    notifyError.hidden = true;
+    try {
+      const data = Object.fromEntries(new FormData(notifyForm));
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || `Erro ${res.status}`);
+      }
+      notifyFormWrap.hidden = true;
+      notifySuccess.hidden = false;
+      setTimeout(closeNotifyModal, 2400);
+    } catch (err) {
+      notifyError.textContent = `Falha: ${err.message}. Tenta de novo em alguns segundos.`;
+      notifyError.hidden = false;
+    } finally {
+      submitBtn.disabled = false; submitBtn.textContent = 'Quero ser avisado';
+    }
+  });
 </script>
 
 </body>
