@@ -454,16 +454,38 @@ async function regen(sid, cep, btn) {
 async function loadDrops() {
   try {
     const { drops } = await api('/api/admin/drops'); DROPS = drops;
-    $('#drops-grid').innerHTML = drops.map(d => `
-      <div class="card drop-card"><div class="top"><h3>${swatch(d.color)} ${esc(d.label)}</h3>
-        <label class="switch"><input type="checkbox" ${d.available ? 'checked' : ''} onchange="toggleDrop('${d.color}', this.checked)"><span class="slider"></span></label></div>
-        <div class="state">${d.available ? '🟢 À venda no site — botão de compra ativo.' : '🔴 Esgotado — mostra "ESGOTADO" e "me avise quando voltar".'}</div></div>`).join('');
+    $('#drops-grid').innerHTML = drops.map(d => {
+      const inStock = d.stock === null || d.stock === undefined || d.stock > 0;
+      const live = d.available && inStock;
+      const stockTxt = (d.stock === null || d.stock === undefined) ? 'ilimitado' : `${d.stock} un.`;
+      let state;
+      if (!d.available) state = '🔴 Desligado manualmente — esgotado no site.';
+      else if (!inStock) state = '🔴 Estoque zerado — esgotado no site automaticamente.';
+      else state = '🟢 À venda no site — botão de compra ativo.';
+      return `<div class="card drop-card">
+        <div class="top"><h3>${swatch(d.color)} ${esc(d.label)}</h3>
+          <label class="switch" title="Liga/desliga venda"><input type="checkbox" ${d.available ? 'checked' : ''} onchange="toggleDrop('${d.color}', this.checked)"><span class="slider"></span></label></div>
+        <div class="state" style="margin-bottom:14px">${state}</div>
+        <div class="d-row" style="align-items:center"><span class="lbl">Estoque</span>
+          <span class="cep-row" style="margin:0">
+            <input id="stk-${d.color}" type="number" min="0" placeholder="ilimitado" value="${d.stock ?? ''}" style="width:110px" />
+            <button class="btn" onclick="saveStock('${d.color}')">Salvar</button>
+          </span></div>
+        <div class="muted" style="font-size:12px;margin-top:8px">Atual: <b>${stockTxt}</b> · cada venda desconta 1. Em 0, esgota sozinho. Vazio = ilimitado.</div>
+      </div>`;
+    }).join('');
   } catch (err) { $('#drops-grid').innerHTML = `<div class="empty">${esc(err.message)}</div>`; }
 }
 async function toggleDrop(color, available) {
   try { await api('/api/admin/drops', { method: 'POST', body: JSON.stringify({ color, available }) });
     toast(`${color}: ${available ? 'à venda 🟢' : 'esgotado 🔴'}`); loadDrops();
   } catch (err) { toast(err.message, true); loadDrops(); }
+}
+async function saveStock(color) {
+  const raw = $('#stk-' + color).value.trim();
+  try { await api('/api/admin/drops', { method: 'POST', body: JSON.stringify({ color, stock: raw === '' ? null : Number(raw) }) });
+    toast(`Estoque de ${color} atualizado`); loadDrops();
+  } catch (err) { toast(err.message, true); }
 }
 
 // WAITLIST

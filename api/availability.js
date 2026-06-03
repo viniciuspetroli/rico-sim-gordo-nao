@@ -15,9 +15,11 @@ export default async function handler(req, res) {
 
   const map = {};
   for (const d of drops) {
+    const inStock = d.stock === null || d.stock === undefined || d.stock > 0;
     map[d.color] = {
       label: d.label,
-      available: d.available,
+      available: d.available && inStock,  // efetivo: chave mestra E tem estoque
+      stock: d.stock ?? null,
       stripe_payment_link: d.stripe_payment_link,
     };
   }

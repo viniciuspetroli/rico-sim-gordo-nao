@@ -823,7 +823,7 @@
     </p>
     <div class="hero-tags reveal reveal-delay-3">
       <span>● Lote 01</span>
-      <span style="color: var(--gold);">● Verde esgotado · Marrom disponível</span>
+      <span id="hero-availability" style="color: var(--gold);">● Verde esgotado · Marrom disponível</span>
       <span>● R$50 com envio</span>
     </div>
   </div>
@@ -900,11 +900,11 @@
 
 <!-- VARIANTES -->
 <section class="variants">
-  <div class="variant-block variant-verde">
+  <div class="variant-block variant-verde" data-color="verde">
     <div class="reveal">
       <div class="eyebrow">Cor 01 / Verde militar</div>
       <h3>VERDE.</h3>
-      <p class="desc">A cor original. Algodão escovado, bordado branco-cru, aba curva. Lote 01 esgotou.</p>
+      <p class="desc">A cor original. Algodão escovado, bordado branco-cru, aba curva.</p>
       <a href="#" class="variant-buy" data-notify="verde">
         <span>Me avise quando voltar</span>
         <span class="price-tag">→</span>
@@ -912,12 +912,12 @@
     </div>
     <div class="bone-frame reveal reveal-delay-2 sold-out-frame">
       <div class="bone-bg-pattern"></div>
-      <img src="images/bone-verde.png" alt="Boné rico sim, gordo não — verde militar (esgotado)" />
+      <img src="images/bone-verde.png" alt="Boné rico sim, gordo não — verde militar" />
       <div class="sold-out-badge">ESGOTADO</div>
       <div class="label">[ verde militar ]</div>
     </div>
   </div>
-  <div class="variant-block variant-marrom">
+  <div class="variant-block variant-marrom" data-color="marrom">
     <div class="reveal">
       <div class="eyebrow" style="color: #a89067;">Cor 02 / Marrom terra</div>
       <h3>MARROM.</h3>
@@ -930,6 +930,7 @@
     <div class="bone-frame reveal reveal-delay-2">
       <div class="bone-bg-pattern"></div>
       <img src="images/bone-marrom.png" alt="Boné rico sim, gordo não — marrom terra" />
+      <div class="sold-out-badge" style="display:none">ESGOTADO</div>
       <div class="label">[ marrom terra ]</div>
     </div>
   </div>
@@ -967,7 +968,7 @@
     Escolhe sua cor. Você é levado pro checkout seguro do Stripe — preenche endereço e paga em menos de 1 minuto. O boné chega na semana seguinte.
   </p>
   <div class="dual-cta reveal reveal-delay-2">
-    <a href="#" data-notify="verde">
+    <a href="#" data-color="verde" data-notify="verde">
       <div class="ctc-swatch" style="background: #3d4a2a;"></div>
       <div class="ctc-eyebrow">Cor 01 · Esgotado</div>
       <p class="ctc-title">Verde militar</p>
@@ -976,7 +977,7 @@
         <span class="ctc-arrow">Me avise →</span>
       </div>
     </a>
-    <a href="https://buy.stripe.com/fZuaEXaCr7YA7Nw7sC7EQ01" data-stripe="marrom">
+    <a href="#" data-color="marrom" data-stripe="marrom">
       <div class="ctc-swatch" style="background: #4a3528;"></div>
       <div class="ctc-eyebrow">Cor 02</div>
       <p class="ctc-title">Marrom terra</p>
@@ -1021,7 +1022,9 @@
   // ───── Smooth scroll com velocidade controlada ─────
   document.querySelectorAll('a[href^="#"]').forEach(link => {
     link.addEventListener('click', e => {
-      const target = document.querySelector(link.getAttribute('href'));
+      const href = link.getAttribute('href');
+      if (!href || href === '#') return; // botões de compra/aviso usam href="#"
+      const target = document.querySelector(href);
       if (!target) return;
       e.preventDefault();
       const start = window.scrollY;
@@ -1144,25 +1147,11 @@
     e.currentTarget.querySelector('.marquee-track').style.animationPlayState = 'running';
   });
 
-  // ───── Stripe Checkout links ─────
-  // CONFIGURE: cole aqui os Payment Links que você criou no Stripe Dashboard
+  // ───── Stripe Checkout links (fallback caso a API de disponibilidade falhe) ─────
   const STRIPE_LINKS = {
     verde:  'https://buy.stripe.com/3cIfZh25Va6I4Bk9AK7EQ00',
     marrom: 'https://buy.stripe.com/fZuaEXaCr7YA7Nw7sC7EQ01',
   };
-
-  document.querySelectorAll('[data-stripe]').forEach(el => {
-    el.addEventListener('click', e => {
-      e.preventDefault();
-      const cor = el.dataset.stripe;
-      const url = STRIPE_LINKS[cor];
-      if (!url || url.includes('COLE_AQUI')) {
-        alert('⚠️ Link do Stripe ainda não configurado.\n\nAbra o index.html e cole o Payment Link em STRIPE_LINKS.' + cor);
-        return;
-      }
-      window.open(url, '_blank');
-    });
-  });
 
   // ───── Waitlist (botões "me avise quando voltar") ─────
   const notifyModal = document.getElementById('notify-modal');
@@ -1187,12 +1176,93 @@
     notifyModal.setAttribute('aria-hidden', 'true');
   }
 
-  document.querySelectorAll('[data-notify]').forEach(el => {
-    el.addEventListener('click', e => {
+  // Delegação: funciona mesmo quando os botões mudam de compra↔aviso dinamicamente.
+  document.addEventListener('click', e => {
+    const buyEl = e.target.closest('[data-stripe]');
+    if (buyEl) {
       e.preventDefault();
-      openNotifyModal(el.dataset.notify);
-    });
+      const cor = buyEl.dataset.stripe;
+      const url = buyEl.dataset.link || STRIPE_LINKS[cor];
+      if (url) window.open(url, '_blank');
+      return;
+    }
+    const notifyEl = e.target.closest('[data-notify]');
+    if (notifyEl && !notifyEl.closest('#notify-modal')) {
+      e.preventDefault();
+      openNotifyModal(notifyEl.dataset.notify);
+    }
   });
+
+  // ───── Disponibilidade dinâmica (drops vindos do painel) ─────
+  const COLORS = {
+    verde:  { short: 'verde',  title: 'Verde militar', eyebrow: 'Cor 01' },
+    marrom: { short: 'marrom', title: 'Marrom terra',  eyebrow: 'Cor 02' },
+  };
+  function setVariant(color, available, link) {
+    const block = document.querySelector(`.variant-block[data-color="${color}"]`);
+    if (!block) return;
+    const buy = block.querySelector('.variant-buy');
+    const frame = block.querySelector('.bone-frame');
+    const badge = block.querySelector('.sold-out-badge');
+    if (available) {
+      buy.setAttribute('data-stripe', color); buy.removeAttribute('data-notify');
+      if (link) buy.dataset.link = link;
+      buy.innerHTML = `<span>Levar o ${COLORS[color].short}</span><span class="price-tag">R$50 →</span>`;
+      frame.classList.remove('sold-out-frame');
+      if (badge) badge.style.display = 'none';
+    } else {
+      buy.setAttribute('data-notify', color); buy.removeAttribute('data-stripe');
+      buy.innerHTML = `<span>Me avise quando voltar</span><span class="price-tag">→</span>`;
+      frame.classList.add('sold-out-frame');
+      if (badge) badge.style.display = '';
+    }
+  }
+  function setDualCta(color, available, link) {
+    const a = document.querySelector(`.dual-cta a[data-color="${color}"]`);
+    if (!a) return;
+    const eyebrow = a.querySelector('.ctc-eyebrow');
+    const price = a.querySelector('.ctc-price');
+    const arrow = a.querySelector('.ctc-arrow');
+    if (available) {
+      a.setAttribute('data-stripe', color); a.removeAttribute('data-notify');
+      if (link) a.dataset.link = link;
+      eyebrow.textContent = COLORS[color].eyebrow;
+      price.classList.remove('ctc-soldout');
+      arrow.textContent = 'Comprar →';
+    } else {
+      a.setAttribute('data-notify', color); a.removeAttribute('data-stripe');
+      eyebrow.textContent = COLORS[color].eyebrow + ' · Esgotado';
+      price.classList.add('ctc-soldout');
+      arrow.textContent = 'Me avise →';
+    }
+  }
+  function setHeroTag(map) {
+    const el = document.getElementById('hero-availability');
+    if (!el) return;
+    const avail = [], sold = [];
+    for (const c of ['verde', 'marrom']) {
+      if (!map[c]) continue;
+      (map[c].available ? avail : sold).push(COLORS[c].title.split(' ')[0]);
+    }
+    if (sold.length && avail.length) el.textContent = `● ${sold.join(' e ')} esgotado · ${avail.join(' e ')} disponível`;
+    else if (sold.length && !avail.length) el.textContent = '● Lote esgotado';
+    else el.textContent = '● 2 cores disponíveis';
+  }
+  async function applyAvailability() {
+    try {
+      const res = await fetch('/api/availability');
+      if (!res.ok) return; // mantém o estado padrão do HTML
+      const map = await res.json();
+      for (const color of ['verde', 'marrom']) {
+        if (!map[color]) continue;
+        setVariant(color, map[color].available, map[color].stripe_payment_link);
+        setDualCta(color, map[color].available, map[color].stripe_payment_link);
+      }
+      setHeroTag(map);
+    } catch { /* offline: mantém o estado padrão do HTML */ }
+  }
+  applyAvailability();
+
   notifyModal.querySelector('.modal-close').addEventListener('click', closeNotifyModal);
   notifyModal.addEventListener('click', e => {
     if (e.target === notifyModal) closeNotifyModal();

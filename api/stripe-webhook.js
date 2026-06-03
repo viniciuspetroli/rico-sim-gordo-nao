@@ -6,7 +6,7 @@ import Stripe from 'stripe';
 import { pickCheapestService, addToCart, checkoutAndGenerate, getPrintUrl, getTracking } from './_lib/melhor-envio.js';
 import { PRODUCT_BY_COLOR, detectColorFromProductName, normalizeStateUf, getRecipientCpf } from './_lib/config.js';
 import { notifyShipmentError } from './_lib/notify.js';
-import { upsertOrder, updateOrder, logEvent } from './_lib/db.js';
+import { upsertOrder, updateOrder, logEvent, registerSale } from './_lib/db.js';
 
 export const config = {
   api: { bodyParser: false }, // Stripe valida assinatura no body cru
@@ -89,6 +89,9 @@ export default async function handler(req, res) {
       ship_country: shipping.address.country,
       status: 'paid',
     });
+
+    // Desconta 1 do estoque da cor (idempotente — não desconta 2x no mesmo pedido).
+    await registerSale(session.id, color);
 
     const destinationCep = shipping.address.postal_code.replace(/\D/g, '');
     const destinationAddress = {

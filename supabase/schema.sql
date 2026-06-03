@@ -73,17 +73,33 @@ create index if not exists event_log_type_idx        on public.event_log (type);
 create table if not exists public.drops (
   color               text primary key,   -- verde | marrom
   label               text,
-  available           boolean default true,
+  available           boolean default true,  -- chave mestra liga/desliga
+  stock               integer,                -- quantidade; null = ilimitado
   stripe_payment_link text,
   sort                integer default 0,
   updated_at          timestamptz default now()
 );
+-- pra bancos que já existiam antes da coluna stock:
+alter table public.drops add column if not exists stock integer;
+-- flag pra não descontar estoque duas vezes no mesmo pedido (reenvio de webhook):
+alter table public.orders add column if not exists stock_decremented boolean default false;
 
 -- Seed inicial: verde esgotado, marrom disponível
 insert into public.drops (color, label, available, stripe_payment_link, sort) values
   ('verde',  'Verde militar', false, 'https://buy.stripe.com/3cIfZh25Va6I4Bk9AK7EQ00', 1),
   ('marrom', 'Marrom terra',  true,  'https://buy.stripe.com/fZuaEXaCr7YA7Nw7sC7EQ01', 2)
 on conflict (color) do nothing;
+
+-- Desconta 1 do estoque por venda, no máximo uma vez por pedido (idempotente).
+create or replace function public.register_sale(p_session_id text, p_color text)
+returns void language plpgsql as $$
+begin
+  if exists (select 1 from public.orders where stripe_session_id = p_session_id and coalesce(stock_decremented, false) = false) then
+    update public.drops set stock = greatest(coalesce(stock, 0) - 1, 0)
+      where color = p_color and stock is not null;
+    update public.orders set stock_decremented = true where stripe_session_id = p_session_id;
+  end if;
+end; $$;
 
 -- ─── updated_at automático ─────────────────────────────────────
 create or replace function public.touch_updated_at()

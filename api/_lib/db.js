@@ -82,6 +82,18 @@ export async function saveWaitlist(record) {
   }
 }
 
+// Desconta 1 do estoque da cor (idempotente por pedido). Engole erro.
+export async function registerSale(stripeSessionId, color) {
+  const c = db();
+  if (!c || !color) return;
+  try {
+    const { error } = await c.rpc('register_sale', { p_session_id: stripeSessionId, p_color: color });
+    if (error) console.error('[db] registerSale:', error.message);
+  } catch (err) {
+    console.error('[db] registerSale exceção:', err.message);
+  }
+}
+
 // Lê o estado dos drops (disponibilidade por cor).
 export async function getDrops() {
   const c = db();
@@ -140,6 +152,16 @@ export async function setDropAvailable(color, available) {
   const c = db();
   if (!c) throw new Error('banco indisponível');
   const { data, error } = await c.from('drops').update({ available }).eq('color', color).select().single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function setDropStock(color, stock) {
+  const c = db();
+  if (!c) throw new Error('banco indisponível');
+  // stock null = ilimitado; número = quantidade
+  const value = (stock === null || stock === '' || stock === undefined) ? null : Math.max(0, parseInt(stock, 10));
+  const { data, error } = await c.from('drops').update({ stock: value }).eq('color', color).select().single();
   if (error) throw new Error(error.message);
   return data;
 }

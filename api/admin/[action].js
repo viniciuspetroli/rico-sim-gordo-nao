@@ -7,7 +7,7 @@
 import { checkPassword, createSessionCookie, clearSessionCookie, isAuthed, requireAuth } from './_auth.js';
 import {
   listOrders, getStats, setOrderStatus, listWaitlist, listEvents,
-  getDrops, setDropAvailable, logEvent,
+  getDrops, setDropAvailable, setDropStock, logEvent,
 } from '../_lib/db.js';
 
 const STATUS_ALLOWED = ['paid', 'label_generated', 'label_failed', 'shipped', 'delivered', 'refunded'];
@@ -67,10 +67,18 @@ export default async function handler(req, res) {
       case 'drops': {
         if (req.method === 'GET') return res.status(200).json({ drops: (await getDrops()) ?? [] });
         if (req.method === 'POST') {
-          const { color, available } = req.body ?? {};
-          if (!color || typeof available !== 'boolean') return res.status(400).json({ error: 'color e available (boolean) obrigatórios' });
-          const drop = await setDropAvailable(color, available);
-          await logEvent({ type: 'drop_toggle', source: 'admin-panel', status: 'ok', payload: { color, available } });
+          const { color, available, stock } = req.body ?? {};
+          if (!color) return res.status(400).json({ error: 'color obrigatório' });
+          let drop;
+          if (stock !== undefined) {
+            drop = await setDropStock(color, stock);
+            await logEvent({ type: 'drop_stock', source: 'admin-panel', status: 'ok', payload: { color, stock } });
+          }
+          if (typeof available === 'boolean') {
+            drop = await setDropAvailable(color, available);
+            await logEvent({ type: 'drop_toggle', source: 'admin-panel', status: 'ok', payload: { color, available } });
+          }
+          if (!drop) return res.status(400).json({ error: 'informe available (boolean) ou stock' });
           return res.status(200).json({ ok: true, drop });
         }
         return res.status(405).json({ error: 'método não suportado' });
