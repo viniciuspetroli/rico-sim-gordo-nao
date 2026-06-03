@@ -95,3 +95,65 @@ export async function getDrops() {
     return null;
   }
 }
+
+// ─── Leituras/ações do painel (lançam erro pra mostrar no front) ───
+
+export async function listOrders({ status, q } = {}) {
+  const c = db();
+  if (!c) throw new Error('banco indisponível');
+  let query = c.from('orders').select('*').order('created_at', { ascending: false }).limit(500);
+  if (status && status !== 'all') query = query.eq('status', status);
+  if (q) query = query.or(`buyer_name.ilike.%${q}%,buyer_email.ilike.%${q}%,tracking_code.ilike.%${q}%`);
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function setOrderStatus(stripeSessionId, status, extra = {}) {
+  const c = db();
+  if (!c) throw new Error('banco indisponível');
+  const patch = { status, ...extra };
+  if (status === 'shipped' && !patch.shipped_at) patch.shipped_at = new Date().toISOString();
+  if (status === 'delivered' && !patch.delivered_at) patch.delivered_at = new Date().toISOString();
+  const { data, error } = await c.from('orders').update(patch).eq('stripe_session_id', stripeSessionId).select().single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function listWaitlist() {
+  const c = db();
+  if (!c) throw new Error('banco indisponível');
+  const { data, error } = await c.from('waitlist').select('*').order('created_at', { ascending: false }).limit(1000);
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function listEvents() {
+  const c = db();
+  if (!c) throw new Error('banco indisponível');
+  const { data, error } = await c.from('event_log').select('*').order('created_at', { ascending: false }).limit(300);
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function setDropAvailable(color, available) {
+  const c = db();
+  if (!c) throw new Error('banco indisponível');
+  const { data, error } = await c.from('drops').update({ available }).eq('color', color).select().single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function getStats() {
+  const c = db();
+  if (!c) throw new Error('banco indisponível');
+  const { data, error } = await c.from('orders').select('status, color, amount_total');
+  if (error) throw new Error(error.message);
+  const stats = { total: data.length, revenue: 0, by_status: {}, by_color: {} };
+  for (const o of data) {
+    stats.revenue += o.amount_total ?? 0;
+    stats.by_status[o.status] = (stats.by_status[o.status] ?? 0) + 1;
+    if (o.color) stats.by_color[o.color] = (stats.by_color[o.color] ?? 0) + 1;
+  }
+  return stats;
+}

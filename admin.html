@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>rico sim, gordo não · admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple: #635bff;
+    --purple-dark: #4f46e5;
+    --bg: #f6f8fa;
+    --card: #ffffff;
+    --border: #e6e8eb;
+    --text: #1a1f36;
+    --text-soft: #697386;
+    --text-mute: #8792a2;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  a { color: var(--purple); text-decoration: none; }
+
+  /* ─── LOGIN ─── */
+  #login-screen {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+    z-index: 100;
+  }
+  .login-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 36px 32px;
+    width: 360px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  }
+  .login-card h1 { font-size: 18px; margin: 0 0 4px; }
+  .login-card p { color: var(--text-soft); margin: 0 0 24px; font-size: 13px; }
+  .login-card input {
+    width: 100%; padding: 12px 14px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 14px; margin-bottom: 12px;
+  }
+  .login-card input:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 0 3px rgba(99,91,255,0.12); }
+  .login-card button {
+    width: 100%; padding: 12px; background: var(--purple); color: #fff;
+    border: none; border-radius: 8px; font-weight: 600; font-size: 14px;
+  }
+  .login-card button:hover { background: var(--purple-dark); }
+  .login-err { color: #cd3d64; font-size: 13px; margin-top: 8px; min-height: 18px; }
+
+  /* ─── APP LAYOUT ─── */
+  #app { display: none; min-height: 100vh; }
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 232px;
+    background: var(--card); border-right: 1px solid var(--border);
+    padding: 20px 12px; display: flex; flex-direction: column;
+  }
+  .brand { font-size: 14px; font-weight: 700; padding: 8px 12px 20px; line-height: 1.3; }
+  .brand small { display: block; color: var(--text-mute); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+    border-radius: 7px; color: var(--text-soft); font-weight: 500;
+    cursor: pointer; margin-bottom: 2px; border: none; background: none;
+    width: 100%; text-align: left; font-size: 14px;
+  }
+  .nav-item:hover { background: var(--bg); color: var(--text); }
+  .nav-item.active { background: #f0f0ff; color: var(--purple); font-weight: 600; }
+  .nav-item .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+  .nav-spacer { flex: 1; }
+
+  .main { margin-left: 232px; padding: 28px 32px; }
+  .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .page-head h2 { font-size: 20px; margin: 0; }
+  .page-head .sub { color: var(--text-soft); font-size: 13px; margin-top: 2px; }
+
+  /* stats */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .stat-card .k { color: var(--text-mute); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  .stat-card .v { font-size: 24px; font-weight: 700; margin-top: 6px; }
+
+  /* filtros */
+  .filters { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .filters input, .filters select {
+    padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--card);
+  }
+  .filters input { flex: 1; min-width: 200px; }
+  .filters input:focus, .filters select:focus { outline: none; border-color: var(--purple); }
+
+  /* tabela */
+  .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 11px 16px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-mute); font-weight: 600; border-bottom: 1px solid var(--border); background: #fafbfc; }
+  td { padding: 13px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  tbody tr.clickable:hover { background: #fafbfc; cursor: pointer; }
+  .muted { color: var(--text-mute); }
+  .mono { font-family: ui-monospace, monospace; font-size: 12px; }
+  .empty { padding: 48px; text-align: center; color: var(--text-mute); }
+
+  /* badges */
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.2px; }
+  .b-paid { background: #d7edff; color: #0b63ce; }
+  .b-label_generated { background: #cdf6e0; color: #0c7a43; }
+  .b-label_failed { background: #ffd9e0; color: #cd3d64; }
+  .b-shipped { background: #e6e1ff; color: #5b4fd6; }
+  .b-delivered { background: #e3e8ee; color: #4f566b; }
+  .b-refunded { background: #f0f0f0; color: #8792a2; }
+  .b-ok { background: #cdf6e0; color: #0c7a43; }
+  .b-error { background: #ffd9e0; color: #cd3d64; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: middle; margin-right: 6px; }
+  .sw-verde { background: #3d4a2a; } .sw-marrom { background: #4a3528; }
+
+  /* drawer */
+  .drawer-bg { position: fixed; inset: 0; background: rgba(26,31,54,0.4); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 50; }
+  .drawer-bg.open { opacity: 1; pointer-events: auto; }
+  .drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 460px; max-width: 92vw;
+    background: var(--card); box-shadow: -8px 0 24px rgba(0,0,0,0.1);
+    transform: translateX(100%); transition: transform .25s; z-index: 51;
+    overflow-y: auto; padding: 24px;
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer h3 { margin: 0 0 2px; font-size: 18px; }
+  .drawer .close { position: absolute; top: 16px; right: 18px; border: none; background: none; font-size: 24px; color: var(--text-mute); }
+  .d-section { border-top: 1px solid var(--border); padding: 16px 0; }
+  .d-section h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-mute); margin: 0 0 10px; }
+  .d-row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 7px; font-size: 13px; }
+  .d-row .lbl { color: var(--text-soft); }
+  .d-row .val { text-align: right; font-weight: 500; word-break: break-word; }
+  .actions { display: flex; flex-direction: column; gap: 8px; }
+  .btn { padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); font-weight: 600; font-size: 13px; text-align: center; }
+  .btn:hover { background: var(--bg); }
+  .btn-primary { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .btn-primary:hover { background: var(--purple-dark); }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-row .btn { flex: 1; }
+  .cep-row { display: flex; gap: 8px; margin-top: 6px; }
+  .cep-row input { flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 13px; z-index: 200; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  .toast.err { background: #cd3d64; }
+
+  /* drops cards */
+  .drops-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .drop-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .drop-card .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .drop-card h3 { margin: 0; font-size: 16px; }
+  .drop-card .state { font-size: 13px; color: var(--text-soft); margin-bottom: 16px; }
+  .switch { position: relative; width: 46px; height: 26px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: #ccd2dd; border-radius: 20px; transition: .2s; }
+  .slider:before { content: ''; position: absolute; height: 20px; width: 20px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+  .switch input:checked + .slider { background: #0c7a43; }
+  .switch input:checked + .slider:before { transform: translateX(20px); }
+
+  .loading { padding: 48px; text-align: center; color: var(--text-mute); }
+  @media (max-width: 700px) {
+    .sidebar { width: 100%; height: auto; position: relative; flex-direction: row; flex-wrap: wrap; }
+    .main { margin-left: 0; padding: 16px; }
+    .nav-spacer { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <form class="login-card" id="login-form">
+    <h1>rico sim, gordo não</h1>
+    <p>Painel administrativo · acesso restrito</p>
+    <input type="password" id="login-pass" placeholder="Senha" autocomplete="current-password" autofocus />
+    <button type="submit">Entrar</button>
+    <div class="login-err" id="login-err"></div>
+  </form>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="brand">rico sim, gordo não<small>admin</small></div>
+    <button class="nav-item active" data-view="orders"><span class="dot"></span> Pedidos</button>
+    <button class="nav-item" data-view="drops"><span class="dot"></span> Drops</button>
+    <button class="nav-item" data-view="waitlist"><span class="dot"></span> Waitlist</button>
+    <button class="nav-item" data-view="events"><span class="dot"></span> Eventos</button>
+    <div class="nav-spacer"></div>
+    <button class="nav-item" id="logout-btn"><span class="dot"></span> Sair</button>
+  </aside>
+
+  <main class="main">
+    <!-- PEDIDOS -->
+    <section id="view-orders">
+      <div class="page-head"><div><h2>Pedidos</h2><div class="sub" id="orders-sub">—</div></div></div>
+      <div class="stats-row" id="stats-row"></div>
+      <div class="filters">
+        <input type="text" id="orders-search" placeholder="Buscar por nome, e-mail ou rastreio…" />
+        <select id="orders-status">
+          <option value="all">Todos os status</option>
+          <option value="paid">Pago</option>
+          <option value="label_generated">Etiqueta gerada</option>
+          <option value="label_failed">Etiqueta falhou</option>
+          <option value="shipped">Enviado</option>
+          <option value="delivered">Entregue</option>
+          <option value="refunded">Reembolsado</option>
+        </select>
+      </div>
+      <div class="table-wrap"><div id="orders-body"><div class="loading">Carregando…</div></div></div>
+    </section>
+
+    <!-- DROPS -->
+    <section id="view-drops" style="display:none">
+      <div class="page-head"><div><h2>Drops</h2><div class="sub">Liga/desliga a venda de cada cor no site. Reflete em ~30s, sem deploy.</div></div></div>
+      <div class="drops-grid" id="drops-grid"><div class="loading">Carregando…</div></div>
+    </section>
+
+    <!-- WAITLIST -->
+    <section id="view-waitlist" style="display:none">
+      <div class="page-head"><div><h2>Waitlist</h2><div class="sub" id="waitlist-sub">—</div></div><button class="btn" id="export-csv">Exportar CSV</button></div>
+      <div class="table-wrap"><div id="waitlist-body"><div class="loading">Carregando…</div></div></div>
+    </section>
+
+    <!-- EVENTOS -->
+    <section id="view-events" style="display:none">
+      <div class="page-head"><div><h2>Eventos</h2><div class="sub">Log técnico de webhooks, etiquetas e ações do painel.</div></div></div>
+      <div class="table-wrap"><div id="events-body"><div class="loading">Carregando…</div></div></div>
+    </section>
+  </main>
+</div>
+
+<!-- DRAWER -->
+<div class="drawer-bg" id="drawer-bg"></div>
+<div class="drawer" id="drawer"><button class="close" id="drawer-close">×</button><div id="drawer-content"></div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const fmtMoney = c => c == null ? '—' : 'R$ ' + (c / 100).toFixed(2).replace('.', ',');
+const fmtDate = s => s ? new Date(s).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const STATUS_LABEL = { paid: 'Pago', label_generated: 'Etiqueta gerada', label_failed: 'Etiqueta falhou', shipped: 'Enviado', delivered: 'Entregue', refunded: 'Reembolsado' };
+const badge = s => `<span class="badge b-${s}">${STATUS_LABEL[s] || s}</span>`;
+const swatch = c => c ? `<span class="swatch sw-${c}"></span>${c}` : '—';
+
+function toast(msg, isErr) { const t = $('#toast'); t.textContent = msg; t.className = 'toast show' + (isErr ? ' err' : ''); setTimeout(() => t.className = 'toast', 2600); }
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+  if (res.status === 401) { showLogin(); throw new Error('sessão expirada'); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
+  return data;
+}
+
+// ─── AUTH ───
+function showLogin() { $('#login-screen').style.display = 'flex'; $('#app').style.display = 'none'; }
+function showApp() { $('#login-screen').style.display = 'none'; $('#app').style.display = 'block'; loadOrders(); }
+
+$('#login-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('#login-err').textContent = '';
+  try {
+    await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ password: $('#login-pass').value }) });
+    showApp();
+  } catch (err) { $('#login-err').textContent = err.message; }
+});
+$('#logout-btn').addEventListener('click', async () => { await fetch('/api/admin/login', { method: 'DELETE' }); showLogin(); });
+
+// ─── NAV ───
+const LOADERS = { orders: loadOrders, drops: loadDrops, waitlist: loadWaitlist, events: loadEvents };
+document.querySelectorAll('.nav-item[data-view]').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const view = btn.dataset.view;
+  document.querySelectorAll('main section').forEach(s => s.style.display = 'none');
+  $('#view-' + view).style.display = 'block';
+  LOADERS[view]();
+}));
+
+// ─── PEDIDOS ───
+let ORDERS = [];
+async function loadOrders() {
+  try {
+    const stats = await api('/api/admin/orders?stats=1');
+    renderStats(stats);
+    const status = $('#orders-status').value, q = $('#orders-search').value.trim();
+    const { orders } = await api(`/api/admin/orders?status=${encodeURIComponent(status)}&q=${encodeURIComponent(q)}`);
+    ORDERS = orders;
+    renderOrders(orders);
+    $('#orders-sub').textContent = `${orders.length} pedido(s)`;
+  } catch (err) { $('#orders-body').innerHTML = `<div class="empty">${esc(err.message)}</div>`; }
+}
+function renderStats(s) {
+  $('#stats-row').innerHTML = `
+    <div class="stat-card"><div class="k">Pedidos</div><div class="v">${s.total}</div></div>
+    <div class="stat-card"><div class="k">Faturamento</div><div class="v">${fmtMoney(s.revenue)}</div></div>
+    <div class="stat-card"><div class="k">Etiqueta falhou</div><div class="v">${s.by_status.label_failed || 0}</div></div>
+    <div class="stat-card"><div class="k">A enviar</div><div class="v">${(s.by_status.paid || 0) + (s.by_status.label_generated || 0)}</div></div>`;
+}
+function renderOrders(orders) {
+  if (!orders.length) { $('#orders-body').innerHTML = '<div class="empty">Nenhum pedido.</div>'; return; }
+  $('#orders-body').innerHTML = `<table><thead><tr>
+    <th>Data</th><th>Cliente</th><th>Cor</th><th>Valor</th><th>Status</th><th>Rastreio</th></tr></thead>
+    <tbody>${orders.map((o, i) => `<tr class="clickable" data-i="${i}">
+      <td class="muted">${fmtDate(o.created_at)}</td>
+      <td>${esc(o.buyer_name) || '—'}<div class="muted" style="font-size:12px">${esc(o.buyer_email) || ''}</div></td>
+      <td>${swatch(o.color)}</td>
+      <td>${fmtMoney(o.amount_total)}</td>
+      <td>${badge(o.status)}</td>
+      <td class="mono">${esc(o.tracking_code) || '—'}</td>
+    </tr>`).join('')}</tbody></table>`;
+  document.querySelectorAll('#orders-body tr.clickable').forEach(tr => tr.addEventListener('click', () => openOrder(ORDERS[tr.dataset.i])));
+}
+$('#orders-search').addEventListener('input', debounce(loadOrders, 350));
+$('#orders-status').addEventListener('change', loadOrders);
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+// ─── DRAWER (detalhe do pedido) ───
+function openOrder(o) {
+  const addr = [o.ship_line1, o.ship_line2, o.ship_city && `${o.ship_city}/${o.ship_state}`, o.ship_postal_code].filter(Boolean).join(' · ');
+  $('#drawer-content').innerHTML = `
+    <h3>${esc(o.buyer_name) || 'Pedido'}</h3>
+    <div class="muted" style="margin-bottom:4px">${badge(o.status)}</div>
+    <div class="d-section"><h4>Cliente</h4>
+      <div class="d-row"><span class="lbl">E-mail</span><span class="val">${esc(o.buyer_email) || '—'}</span></div>
+      <div class="d-row"><span class="lbl">Telefone</span><span class="val">${esc(o.buyer_phone) || '—'}</span></div>
+      <div class="d-row"><span class="lbl">CPF</span><span class="val mono">${esc(o.buyer_cpf) || '—'}</span></div>
+    </div>
+    <div class="d-section"><h4>Entrega</h4>
+      <div class="d-row"><span class="lbl">Endereço</span><span class="val">${esc(addr) || '—'}</span></div>
+      <div class="d-row"><span class="lbl">Produto</span><span class="val">${swatch(o.color)} · ${fmtMoney(o.amount_total)}</span></div>
+      ${o.shipping_service ? `<div class="d-row"><span class="lbl">Transportadora</span><span class="val">${esc(o.shipping_service)} (R$ ${esc(o.shipping_price)})</span></div>` : ''}
+      <div class="d-row"><span class="lbl">Rastreio</span><span class="val mono">${esc(o.tracking_code) || '—'}</span></div>
+      ${o.error_message ? `<div class="d-row"><span class="lbl">Erro</span><span class="val" style="color:#cd3d64">${esc(o.error_message)}</span></div>` : ''}
+    </div>
+    <div class="d-section"><h4>Ações</h4><div class="actions">
+      ${o.label_url ? `<a class="btn" href="${esc(o.label_url)}" target="_blank">Abrir etiqueta (PDF)</a>` : ''}
+      <a class="btn" href="https://dashboard.stripe.com/payments/${esc(o.stripe_payment_intent)}" target="_blank">Abrir no Stripe</a>
+      <div class="btn-row">
+        <button class="btn" onclick="setStatus('${o.stripe_session_id}','shipped')">Marcar enviado</button>
+        <button class="btn" onclick="setStatus('${o.stripe_session_id}','delivered')">Marcar entregue</button>
+      </div>
+      <button class="btn" onclick="setStatus('${o.stripe_session_id}','refunded')">Marcar reembolsado</button>
+      <div>
+        <button class="btn btn-primary" style="width:100%" onclick="regen('${o.stripe_session_id}', this)">Regerar etiqueta</button>
+        <div class="cep-row"><input id="cep-ov" placeholder="CEP correto (opcional)" /><button class="btn" onclick="regenCep('${o.stripe_session_id}', this)">com CEP</button></div>
+      </div>
+    </div></div>`;
+  $('#drawer').classList.add('open'); $('#drawer-bg').classList.add('open');
+}
+function closeDrawer() { $('#drawer').classList.remove('open'); $('#drawer-bg').classList.remove('open'); }
+$('#drawer-close').addEventListener('click', closeDrawer);
+$('#drawer-bg').addEventListener('click', closeDrawer);
+
+async function setStatus(sid, status) {
+  try { await api('/api/admin/order-update', { method: 'POST', body: JSON.stringify({ session_id: sid, status }) });
+    toast('Status atualizado'); closeDrawer(); loadOrders();
+  } catch (err) { toast(err.message, true); }
+}
+async function regen(sid, btn) { await doRegen(sid, null, btn); }
+async function regenCep(sid, btn) { await doRegen(sid, $('#cep-ov').value.trim(), btn); }
+async function doRegen(sid, cep, btn) {
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Gerando…';
+  try {
+    const r = await api('/api/admin/regenerate', { method: 'POST', body: JSON.stringify({ session_id: sid, ...(cep ? { cep_override: cep } : {}) }) });
+    toast('Etiqueta gerada: ' + (r.tracking_code || 'ok')); closeDrawer(); loadOrders();
+  } catch (err) { toast(err.message, true); btn.disabled = false; btn.textContent = orig; }
+}
+
+// ─── DROPS ───
+async function loadDrops() {
+  try {
+    const { drops } = await api('/api/admin/drops');
+    $('#drops-grid').innerHTML = drops.map(d => `
+      <div class="drop-card">
+        <div class="top"><h3>${swatch(d.color)} ${esc(d.label)}</h3>
+          <label class="switch"><input type="checkbox" ${d.available ? 'checked' : ''} onchange="toggleDrop('${d.color}', this.checked)"><span class="slider"></span></label>
+        </div>
+        <div class="state">${d.available ? '🟢 À venda no site' : '🔴 Esgotado (mostra "me avise")'}</div>
+      </div>`).join('');
+  } catch (err) { $('#drops-grid').innerHTML = `<div class="empty">${esc(err.message)}</div>`; }
+}
+async function toggleDrop(color, available) {
+  try { await api('/api/admin/drops', { method: 'POST', body: JSON.stringify({ color, available }) });
+    toast(`${color}: ${available ? 'à venda' : 'esgotado'}`);
+  } catch (err) { toast(err.message, true); loadDrops(); }
+}
+
+// ─── WAITLIST ───
+let WAITLIST = [];
+async function loadWaitlist() {
+  try {
+    const { waitlist } = await api('/api/admin/waitlist');
+    WAITLIST = waitlist;
+    $('#waitlist-sub').textContent = `${waitlist.length} inscrito(s)`;
+    $('#waitlist-body').innerHTML = !waitlist.length ? '<div class="empty">Ninguém na fila ainda.</div>' :
+      `<table><thead><tr><th>Data</th><th>Nome</th><th>E-mail</th><th>Cor</th></tr></thead><tbody>${waitlist.map(w => `<tr>
+        <td class="muted">${fmtDate(w.created_at)}</td><td>${esc(w.name)}</td><td>${esc(w.email)}</td><td>${swatch(w.color)}</td></tr>`).join('')}</tbody></table>`;
+  } catch (err) { $('#waitlist-body').innerHTML = `<div class="empty">${esc(err.message)}</div>`; }
+}
+$('#export-csv').addEventListener('click', () => {
+  if (!WAITLIST.length) return toast('Nada pra exportar', true);
+  const rows = [['data', 'nome', 'email', 'cor'], ...WAITLIST.map(w => [w.created_at, w.name, w.email, w.color])];
+  const csv = rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = 'waitlist.csv'; a.click();
+});
+
+// ─── EVENTOS ───
+async function loadEvents() {
+  try {
+    const { events } = await api('/api/admin/events');
+    $('#events-body').innerHTML = !events.length ? '<div class="empty">Sem eventos.</div>' :
+      `<table><thead><tr><th>Data</th><th>Tipo</th><th>Origem</th><th>Status</th><th>Detalhe</th></tr></thead><tbody>${events.map(e => `<tr>
+        <td class="muted">${fmtDate(e.created_at)}</td><td>${esc(e.type)}</td><td class="muted">${esc(e.source)}</td>
+        <td><span class="badge b-${e.status === 'ok' ? 'ok' : 'error'}">${esc(e.status)}</span></td>
+        <td class="muted" style="max-width:320px">${esc(e.error || (e.payload ? JSON.stringify(e.payload) : '')).slice(0, 160)}</td></tr>`).join('')}</tbody></table>`;
+  } catch (err) { $('#events-body').innerHTML = `<div class="empty">${esc(err.message)}</div>`; }
+}
+
+// ─── BOOT ───
+(async () => {
+  try { const { authed } = await api('/api/admin/login'); authed ? showApp() : showLogin(); }
+  catch { showLogin(); }
+})();
+</script>
+</body>
+</html>
