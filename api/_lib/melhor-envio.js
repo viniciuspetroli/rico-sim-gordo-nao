@@ -81,6 +81,14 @@ async function getValidAccessToken() {
   return tokens.access_token;
 }
 
+// Renova o token incondicionalmente (usado pelo cron diário).
+export async function refreshTokensNow() {
+  const tokens = await loadTokens();
+  if (!tokens?.refresh_token) throw new Error('Sem refresh_token salvo — autorize em /api/me-auth');
+  const refreshed = await refreshTokens(tokens.refresh_token);
+  return { expires_in: refreshed.expires_in, expires_at: Date.now() + refreshed.expires_in * 1000 };
+}
+
 async function meRequest(path, { method = 'GET', body } = {}) {
   const token = await getValidAccessToken();
   const res = await fetch(`${ME_BASE_URL}/api/v2${path}`, {
