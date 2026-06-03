@@ -7,7 +7,7 @@
 import { checkPassword, createSessionCookie, clearSessionCookie, isAuthed, requireAuth } from './_auth.js';
 import {
   listOrders, getStats, setOrderStatus, patchOrder, listWaitlist, listEvents,
-  getDrops, setDropAvailable, setDropStock, logEvent,
+  listRequests, getDrops, setDropAvailable, setDropStock, logEvent,
 } from '../_lib/db.js';
 
 const STATUS_ALLOWED = ['paid', 'label_generated', 'label_failed', 'shipped', 'delivered', 'refunded'];
@@ -96,6 +96,9 @@ export default async function handler(req, res) {
 
       case 'events':
         return res.status(200).json({ events: await listEvents() });
+
+      case 'requests':
+        return res.status(200).json({ requests: await listRequests({ source: req.query.source }) });
 
       default:
         return res.status(404).json({ error: `rota desconhecida: ${action}` });

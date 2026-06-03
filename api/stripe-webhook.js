@@ -7,6 +7,7 @@ import { pickCheapestService, addToCart, checkoutAndGenerate, getPrintUrl, getTr
 import { PRODUCT_BY_COLOR, detectColorFromProductName, normalizeStateUf, getRecipientCpf } from './_lib/config.js';
 import { notifyShipmentError } from './_lib/notify.js';
 import { upsertOrder, updateOrder, logEvent, registerSale } from './_lib/db.js';
+import { withRequestLog } from './_lib/reqlog.js';
 
 export const config = {
   api: { bodyParser: false }, // Stripe valida assinatura no body cru
@@ -18,7 +19,7 @@ async function readRawBody(req) {
   return Buffer.concat(chunks);
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -33,11 +34,14 @@ export default async function handler(req, res) {
     return res.status(400).send(`Webhook signature error: ${err.message}`);
   }
 
+  req._logBody = { type: event.type, id: event.id }; // pro request log (body é cru)
+
   if (event.type !== 'checkout.session.completed') {
     return res.status(200).json({ received: true, ignored: event.type });
   }
 
   const session = event.data.object;
+  req._logBody = { type: event.type, id: event.id, session_id: session.id, amount: session.amount_total };
   const context = { source: 'stripe-webhook', stripe_session_id: session.id };
 
   try {
@@ -190,3 +194,5 @@ export default async function handler(req, res) {
     return res.status(200).json({ received: true, error: err.message, manual_action_required: true });
   }
 }
+
+export default withRequestLog('stripe-webhook', handler);

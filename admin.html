@@ -160,6 +160,7 @@
   .btn-row { display: flex; gap: 8px; } .btn-row .btn { flex: 1; }
   .status-select { width: 100%; padding: 11px 12px; border: 1px solid var(--border); border-radius: 9px; font-size: 14px; font-weight: 600; background: var(--card); color: var(--text); cursor: pointer; }
   .status-select:focus { outline: none; border-color: var(--purple); }
+  .reqpre { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: ui-monospace, monospace; font-size: 12px; white-space: pre-wrap; word-break: break-word; overflow-x: auto; margin: 0; max-height: 280px; overflow-y: auto; }
   .cep-row { display: flex; gap: 8px; margin-top: 6px; }
   .cep-row input { flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 9px; font-size: 13px; }
 
@@ -216,6 +217,7 @@
     <button class="nav-item" data-view="drops"><span class="ico">🎯</span><span class="lbl">Drops</span></button>
     <button class="nav-item" data-view="waitlist"><span class="ico">📋</span><span class="lbl">Lista de espera</span></button>
     <button class="nav-item" data-view="events"><span class="ico">🔔</span><span class="lbl">Atividade</span></button>
+    <button class="nav-item" data-view="requests"><span class="ico">🌐</span><span class="lbl">Requisições</span></button>
     <div class="nav-spacer"></div>
     <button class="nav-item" id="logout-btn"><span class="ico">↩</span><span class="lbl">Sair</span></button>
   </aside>
@@ -260,6 +262,13 @@
     <section id="view-events" style="display:none">
       <div class="page-head"><h2>Atividade</h2><div class="sub">Tudo que aconteceu: compras, etiquetas, ações do painel. Útil pra entender qualquer problema.</div></div>
       <div class="table-wrap"><div id="events-body"><div class="loading">Carregando…</div></div></div>
+    </section>
+
+    <!-- REQUISIÇÕES -->
+    <section id="view-requests" style="display:none">
+      <div class="page-head"><h2>Requisições</h2><div class="sub">Toda batida nos nossos endpoints (Stripe, Melhor Envio, etc.) com URL, headers, body e a resposta. Clique numa linha pra ver tudo.</div></div>
+      <div class="segs" id="req-segs"></div>
+      <div class="table-wrap"><div id="requests-body"><div class="loading">Carregando…</div></div></div>
     </section>
   </main>
 </div>
@@ -317,7 +326,7 @@ $('#login-form').addEventListener('submit', async e => {
 $('#logout-btn').addEventListener('click', async () => { await fetch('/api/admin/login', { method: 'DELETE' }); showLogin(); });
 
 // NAV
-const LOADERS = { overview: loadOverview, orders: loadOrders, drops: loadDrops, waitlist: loadWaitlist, events: loadEvents };
+const LOADERS = { overview: loadOverview, orders: loadOrders, drops: loadDrops, waitlist: loadWaitlist, events: loadEvents, requests: loadRequests };
 document.querySelectorAll('.nav-item[data-view]').forEach(btn => btn.addEventListener('click', () => goto(btn.dataset.view)));
 function goto(view) {
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
@@ -580,6 +589,48 @@ async function loadEvents() {
         <td><span class="badge b-${e.status === 'ok' ? 'ok' : 'error'}">${esc(e.status)}</span></td>
         <td class="muted" style="max-width:320px">${esc(e.error || (e.payload ? JSON.stringify(e.payload) : '')).slice(0, 160)}</td></tr>`).join('')}</tbody></table>`;
   } catch (err) { $('#events-body').innerHTML = `<div class="empty">${esc(err.message)}</div>`; }
+}
+
+// REQUISIÇÕES
+let REQUESTS = [], REQ_SRC = 'all';
+function httpBadgeClass(st) { if (!st) return 'b-refunded'; if (st < 300) return 'b-ok'; if (st < 400) return 'b-shipped'; if (st < 500) return 'b-paid'; return 'b-error'; }
+function pretty(v) {
+  if (v == null || v === '') return '—';
+  if (typeof v === 'object') { try { return JSON.stringify(v, null, 2); } catch { return String(v); } }
+  try { return JSON.stringify(JSON.parse(v), null, 2); } catch { return String(v); }
+}
+async function loadRequests() {
+  try { const { requests } = await api('/api/admin/requests'); REQUESTS = requests; renderReqSegs(); renderRequests(); }
+  catch (err) { $('#requests-body').innerHTML = `<div class="empty">${esc(err.message)}</div>`; }
+}
+function renderReqSegs() {
+  const srcs = ['all', ...Array.from(new Set(REQUESTS.map(r => r.source).filter(Boolean)))];
+  $('#req-segs').innerHTML = srcs.map(s => {
+    const n = s === 'all' ? REQUESTS.length : REQUESTS.filter(r => r.source === s).length;
+    return `<button class="seg ${s === REQ_SRC ? 'active' : ''}" onclick="setReqSrc('${s}')">${s === 'all' ? 'Todas' : esc(s)}<span class="n">${n}</span></button>`;
+  }).join('');
+}
+function setReqSrc(s) { REQ_SRC = s; renderReqSegs(); renderRequests(); }
+function renderRequests() {
+  let list = REQ_SRC === 'all' ? REQUESTS : REQUESTS.filter(r => r.source === REQ_SRC);
+  if (!list.length) { $('#requests-body').innerHTML = '<div class="empty"><span class="ico">🌐</span>Nenhuma requisição registrada ainda.</div>'; return; }
+  $('#requests-body').innerHTML = `<table><thead><tr><th>Data</th><th>Método</th><th>Caminho</th><th>Origem</th><th>Status</th></tr></thead><tbody>${list.map(r => {
+    const idx = REQUESTS.indexOf(r);
+    return `<tr class="clickable" data-i="${idx}"><td class="muted">${fmtDate(r.created_at)}</td><td class="mono">${esc(r.method)}</td><td class="mono">${esc(r.path)}</td><td class="muted">${esc(r.source)}</td><td><span class="badge ${httpBadgeClass(r.status)}">${r.status ?? '—'}</span></td></tr>`;
+  }).join('')}</tbody></table>`;
+  document.querySelectorAll('#requests-body tr.clickable').forEach(tr => tr.addEventListener('click', () => openRequest(REQUESTS[tr.dataset.i])));
+}
+function openRequest(r) {
+  $('#drawer-content').innerHTML = `
+    <h3 style="font-size:16px">${esc(r.method)} ${esc(r.path)}</h3>
+    <div style="margin:6px 0 14px"><span class="badge ${httpBadgeClass(r.status)}">HTTP ${r.status ?? '—'}</span> <span class="muted" style="font-size:12px">${esc(r.source)} · ${fmtDate(r.created_at)}</span></div>
+    <div class="d-section"><h4>Origem</h4>
+      <div class="d-row"><span class="lbl">IP</span><span class="val mono">${esc(r.ip) || '—'}</span></div></div>
+    <div class="d-section"><h4>Query</h4><pre class="reqpre">${esc(pretty(r.query))}</pre></div>
+    <div class="d-section"><h4>Headers</h4><pre class="reqpre">${esc(pretty(r.headers))}</pre></div>
+    <div class="d-section"><h4>Body recebido</h4><pre class="reqpre">${esc(pretty(r.body))}</pre></div>
+    <div class="d-section"><h4>Resposta que demos</h4><pre class="reqpre">${esc(pretty(r.response))}</pre></div>`;
+  $('#drawer').classList.add('open'); $('#drawer-bg').classList.add('open');
 }
 
 // BOOT

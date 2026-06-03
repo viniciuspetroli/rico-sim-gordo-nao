@@ -94,6 +94,28 @@ export async function registerSale(stripeSessionId, color) {
   }
 }
 
+// Grava uma requisição no log de requisições. Engole erro.
+export async function logRequest(record) {
+  const c = db();
+  if (!c) return;
+  try {
+    const { error } = await c.from('request_log').insert(record);
+    if (error) console.error('[db] logRequest:', error.message);
+  } catch (err) {
+    console.error('[db] logRequest exceção:', err.message);
+  }
+}
+
+export async function listRequests({ source } = {}) {
+  const c = db();
+  if (!c) throw new Error('banco indisponível');
+  let query = c.from('request_log').select('*').order('created_at', { ascending: false }).limit(200);
+  if (source && source !== 'all') query = query.eq('source', source);
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 // Lê o estado dos drops (disponibilidade por cor).
 export async function getDrops() {
   const c = db();

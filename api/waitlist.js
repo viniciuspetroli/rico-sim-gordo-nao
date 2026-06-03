@@ -3,8 +3,9 @@
 // independentes: se um falhar, o outro ainda registra o lead.
 
 import { saveWaitlist, logEvent } from './_lib/db.js';
+import { withRequestLog } from './_lib/reqlog.js';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'use POST' });
 
   const { name, email, color } = req.body ?? {};
@@ -44,3 +45,5 @@ export default async function handler(req, res) {
   console.log(`Waitlist signup: ${cleanEmail} (${cleanColor})`);
   return res.status(200).json({ ok: true });
 }
+
+export default withRequestLog('waitlist', handler);

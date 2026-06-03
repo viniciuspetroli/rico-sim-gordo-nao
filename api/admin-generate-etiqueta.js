@@ -16,8 +16,9 @@ import { pickCheapestService, addToCart, checkoutAndGenerate, getPrintUrl, getTr
 import { PRODUCT_BY_COLOR, detectColorFromProductName, normalizeStateUf, getRecipientCpf } from './_lib/config.js';
 import { notifyShipmentError } from './_lib/notify.js';
 import { upsertOrder, updateOrder, logEvent } from './_lib/db.js';
+import { withRequestLog } from './_lib/reqlog.js';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'use POST' });
 
   const token = req.headers['x-admin-token'];
@@ -151,3 +152,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: err.message, me_response: err.response });
   }
 }
+
+export default withRequestLog('admin-generate-etiqueta', handler);

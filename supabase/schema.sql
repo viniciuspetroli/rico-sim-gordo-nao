@@ -69,6 +69,23 @@ create table if not exists public.event_log (
 create index if not exists event_log_created_at_idx on public.event_log (created_at desc);
 create index if not exists event_log_type_idx        on public.event_log (type);
 
+-- ─── REQUEST LOG (toda batida nos endpoints de integração) ─────
+create table if not exists public.request_log (
+  id          uuid primary key default gen_random_uuid(),
+  source      text,      -- stripe-webhook | me-callback | waitlist | ...
+  method      text,
+  path        text,
+  query       jsonb,
+  headers     jsonb,
+  body        text,
+  ip          text,
+  status      integer,
+  response    text,
+  created_at  timestamptz default now()
+);
+create index if not exists request_log_created_at_idx on public.request_log (created_at desc);
+create index if not exists request_log_source_idx     on public.request_log (source);
+
 -- ─── DROPS (controla disponibilidade no site) ─────────────────
 create table if not exists public.drops (
   color               text primary key,   -- verde | marrom
@@ -117,9 +134,10 @@ create trigger drops_touch before update on public.drops
 -- ─── SEGURANÇA (RLS) ───────────────────────────────────────────
 -- Tudo trancado. As serverless functions usam a service_role key,
 -- que ignora RLS. O público não lê nada direto pelo anon key.
-alter table public.orders     enable row level security;
-alter table public.waitlist   enable row level security;
-alter table public.event_log  enable row level security;
-alter table public.drops      enable row level security;
+alter table public.orders      enable row level security;
+alter table public.waitlist    enable row level security;
+alter table public.event_log   enable row level security;
+alter table public.drops       enable row level security;
+alter table public.request_log enable row level security;
 
 -- (sem policies = ninguém com anon key acessa; service_role passa direto)

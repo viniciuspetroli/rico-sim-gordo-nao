@@ -11,8 +11,9 @@
 import Stripe from 'stripe';
 import { detectColorFromProductName, getRecipientCpf } from './_lib/config.js';
 import { upsertOrder } from './_lib/db.js';
+import { withRequestLog } from './_lib/reqlog.js';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const token = req.headers['x-admin-token'];
   if (!token || token !== process.env.STRIPE_WEBHOOK_SECRET) {
     return res.status(401).json({ error: 'unauthorized' });
@@ -78,3 +79,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: err.message, imported, skipped, errors });
   }
 }
+
+export default withRequestLog('backfill', handler);

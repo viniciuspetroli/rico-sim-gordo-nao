@@ -1,8 +1,9 @@
 // Recebe o redirect do ME após autorização. Troca o `code` por tokens e salva no storage.
 
 import { exchangeCodeForTokens } from './_lib/melhor-envio.js';
+import { withRequestLog } from './_lib/reqlog.js';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const { code, state } = req.query;
   if (!code) return res.status(400).send('Faltou o parâmetro code');
 
@@ -24,3 +25,5 @@ export default async function handler(req, res) {
     res.status(500).send(`Falha trocando code por token: ${err.message}`);
   }
 }
+
+export default withRequestLog('me-callback', handler);
