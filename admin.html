@@ -285,9 +285,13 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 const swatch = c => c ? `<span class="swatch sw-${c}"></span>${c}` : '—';
 const dot = c => c ? `<span class="swatch sw-${c}"></span>` : '';
 // Mostra as cores do pedido (lida com order bump multi-cor).
+// Multi-cor: sempre mostra a quantidade de cada. Cor única: só mostra ×N se N>1.
 function orderColors(o) {
   if (o.items && typeof o.items === 'object' && Object.keys(o.items).length) {
-    return Object.entries(o.items).map(([c, q]) => `${dot(c)}${c}${q > 1 ? ` ×${q}` : ''}`).join(' &nbsp;');
+    const entries = Object.entries(o.items);
+    if (entries.length > 1) return entries.map(([c, q]) => `${dot(c)}${c} <b>×${q}</b>`).join(' &nbsp;·&nbsp; ');
+    const [c, q] = entries[0];
+    return `${dot(c)}${c}${q > 1 ? ` <b>×${q}</b>` : ''}`;
   }
   return `${swatch(o.color)}${o.quantity > 1 ? ` <b>×${o.quantity}</b>` : ''}`;
 }
