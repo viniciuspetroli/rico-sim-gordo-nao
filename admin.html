@@ -295,6 +295,14 @@ function orderColors(o) {
   }
   return `${swatch(o.color)}${o.quantity > 1 ? ` <b>×${o.quantity}</b>` : ''}`;
 }
+// Linhas de itens pra seção Produto na gaveta (uma por cor).
+function itemRows(o) {
+  const entries = (o.items && typeof o.items === 'object' && Object.keys(o.items).length)
+    ? Object.entries(o.items)
+    : (o.color ? [[o.color, o.quantity ?? 1]] : []);
+  if (!entries.length) return `<div class="d-row"><span class="lbl">—</span><span class="val">—</span></div>`;
+  return entries.map(([c, q]) => `<div class="d-row"><span class="lbl">${dot(c)} ${c}</span><span class="val"><b>${q}</b> un</span></div>`).join('');
+}
 
 const STATUS = {
   paid:            { label: 'Aguardando etiqueta', icon: '🕐' },
@@ -482,13 +490,16 @@ function openOrder(o) {
       </select>
       <div class="muted" style="font-size:12px;margin-top:6px">Se digitar o rastreio abaixo antes, ele é salvo junto ao marcar "Enviado".</div>
     </div>
+    <div class="d-section"><h4>Produto</h4>
+      ${itemRows(o)}
+      <div class="d-row" style="border-top:1px solid var(--border);margin-top:6px;padding-top:8px"><span class="lbl">Total</span><span class="val">${o.quantity ?? 1} un · ${fmtMoney(o.amount_total)}</span></div>
+    </div>
     <div class="d-section"><h4>Cliente</h4>
       <div class="d-row"><span class="lbl">E-mail</span><span class="val">${esc(o.buyer_email) || '—'}</span></div>
       <div class="d-row"><span class="lbl">Telefone</span><span class="val">${esc(o.buyer_phone) || '—'}</span></div>
       <div class="d-row"><span class="lbl">CPF</span><span class="val mono">${esc(o.buyer_cpf) || '—'}</span></div></div>
     <div class="d-section"><h4>Entrega</h4>
       <div class="d-row"><span class="lbl">Endereço</span><span class="val">${esc(addr) || '—'}</span></div>
-      <div class="d-row"><span class="lbl">Produto</span><span class="val">${orderColors(o)} · ${fmtMoney(o.amount_total)}</span></div>
       ${o.shipping_service ? `<div class="d-row"><span class="lbl">Transportadora</span><span class="val">${esc(o.shipping_service)} (R$ ${esc(o.shipping_price)})</span></div>` : ''}
       <div class="d-row" style="align-items:center"><span class="lbl">Rastreio</span>
         <span class="cep-row" style="margin:0;flex:0 1 auto">
