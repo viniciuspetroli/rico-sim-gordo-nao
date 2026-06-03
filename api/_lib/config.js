@@ -14,7 +14,7 @@ export const ORIGIN_ADDRESS = {
   name: 'João Pedro Vieira Ribeiro Guerra',
   phone: '+5513992078849',
   email: process.env.ME_CONTACT_EMAIL ?? 'guerraagencia@gmail.com',
-  document: '', // CPF do João — preencher antes de produção (sem pontos/traços)
+  document: '36465654890', // CPF do João (remetente), sem pontos/traços
   address: 'Rua Kansas',
   number: '1700',
   complement: 'Apt 135 Texas',
@@ -124,6 +124,8 @@ export function normalizeStateUf(state) {
 // CPF fallback — usado quando o cliente errou o dígito ou não preencheu.
 // Evita pedido travar; etiqueta sai mesmo assim.
 const FALLBACK_CPF = '52768084069';
+// CPF alternativo pra quando o destinatário vier igual ao remetente (ME recusa).
+const SAME_AS_SENDER_FALLBACK_CPF = '83211270027';
 
 // Valida CPF: 11 dígitos + checksum oficial. Rejeita sequências repetidas (000..., 111...).
 export function isValidCpf(input) {
@@ -151,7 +153,14 @@ export function getRecipientCpf(session) {
   );
   const raw = cpfField?.numeric?.value ?? cpfField?.text?.value ?? '';
   const cleaned = raw.replace(/\D/g, '');
-  if (isValidCpf(cleaned)) return cleaned;
-  console.warn(`CPF inválido ou ausente na sessão ${session.id} (recebido: "${raw}"). Usando fallback.`);
-  return FALLBACK_CPF;
+  let cpf = isValidCpf(cleaned) ? cleaned : FALLBACK_CPF;
+  if (!isValidCpf(cleaned)) {
+    console.warn(`CPF inválido ou ausente na sessão ${session.id} (recebido: "${raw}"). Usando fallback.`);
+  }
+  // ME recusa se o CPF do destinatário for igual ao do remetente.
+  if (cpf === ORIGIN_ADDRESS.document) {
+    console.warn(`CPF do destinatário igual ao do remetente na sessão ${session.id}. Usando CPF alternativo.`);
+    cpf = SAME_AS_SENDER_FALLBACK_CPF;
+  }
+  return cpf;
 }
