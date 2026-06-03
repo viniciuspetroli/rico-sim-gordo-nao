@@ -6,7 +6,7 @@ import Stripe from 'stripe';
 import { pickCheapestService, addToCart, checkoutAndGenerate, getPrintUrl, getTracking } from './_lib/melhor-envio.js';
 import { normalizeStateUf, getRecipientCpf, buildOrderItems } from './_lib/config.js';
 import { notifyShipmentError } from './_lib/notify.js';
-import { upsertOrder, updateOrder, logEvent, registerSale } from './_lib/db.js';
+import { upsertOrder, updateOrder, logEvent, registerSale, getOrderBySession } from './_lib/db.js';
 import { withRequestLog } from './_lib/reqlog.js';
 
 export const config = {
@@ -45,6 +45,15 @@ async function handler(req, res) {
   const context = { source: 'stripe-webhook', stripe_session_id: session.id };
 
   try {
+    // Idempotência: se esse pedido já tem etiqueta gerada, NÃO gera de novo
+    // (evita etiqueta + cobrança duplicada quando o webhook é reenviado).
+    const existing = await getOrderBySession(session.id);
+    if (existing?.me_order_id) {
+      console.log(`Stripe ${session.id}: já tem etiqueta (${existing.me_order_id}) — pulando geração.`);
+      await logEvent({ type: 'duplicate_skipped', source: 'stripe-webhook', stripe_session_id: session.id, status: 'ok', payload: { me_order_id: existing.me_order_id } });
+      return res.status(200).json({ received: true, already_fulfilled: true, me_order_id: existing.me_order_id, tracking_code: existing.tracking_code });
+    }
+
     const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 10, expand: ['data.price.product'] });
     const items = buildOrderItems(lineItems.data);
     context.product = items ? { summary: items.summary, color: items.primaryColor, qty: items.totalQty, qtyByColor: items.qtyByColor } : { raw: lineItems.data[0]?.price?.product?.name };
@@ -196,7 +205,7 @@ async function handler(req, res) {
       ...context,
       error: { message: err.message, details: err.response ?? null },
     });
-    return res.status(200).json({ received: true, error: err.message, manual_action_required: true });
+    return res.status(200).json({ received: true, error: err.message, details: err.response ?? null, manual_action_required: true });
   }
 }
 

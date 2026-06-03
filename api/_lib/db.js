@@ -155,6 +155,20 @@ export async function setOrderStatus(stripeSessionId, status, extra = {}) {
   return data;
 }
 
+// Busca um pedido pelo session id. Engole erro (retorna null).
+export async function getOrderBySession(stripeSessionId) {
+  const c = db();
+  if (!c) return null;
+  try {
+    const { data, error } = await c.from('orders').select('*').eq('stripe_session_id', stripeSessionId).maybeSingle();
+    if (error) { console.error('[db] getOrderBySession:', error.message); return null; }
+    return data;
+  } catch (err) {
+    console.error('[db] getOrderBySession exceção:', err.message);
+    return null;
+  }
+}
+
 // Atualiza campos avulsos (ex.: só o rastreio) — lança erro pro painel mostrar.
 export async function patchOrder(stripeSessionId, patch) {
   const c = db();
