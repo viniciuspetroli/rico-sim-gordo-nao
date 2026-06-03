@@ -15,6 +15,7 @@ import Stripe from 'stripe';
 import { pickCheapestService, addToCart, checkoutAndGenerate, getPrintUrl, getTracking } from './_lib/melhor-envio.js';
 import { PRODUCT_BY_COLOR, detectColorFromProductName, normalizeStateUf, getRecipientCpf } from './_lib/config.js';
 import { notifyShipmentError } from './_lib/notify.js';
+import { upsertOrder, updateOrder, logEvent } from './_lib/db.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'use POST' });
@@ -86,6 +87,40 @@ export default async function handler(req, res) {
 
     console.log(`admin-etiqueta ${session_id}: OK order=${orderId} tracking=${tracking[orderId]?.tracking}`);
 
+    // Garante que o pedido existe e atualiza com o resultado da etiqueta.
+    await upsertOrder({
+      stripe_session_id: session_id,
+      stripe_payment_intent: session.payment_intent ?? null,
+      buyer_name: context.buyer.name,
+      buyer_email: context.buyer.email,
+      buyer_phone: context.buyer.phone,
+      buyer_cpf: context.buyer.document,
+      color,
+      product_name: productName,
+      amount_total: session.amount_total,
+      currency: session.currency,
+      ship_line1: shipping.address.line1,
+      ship_line2: shipping.address.line2 ?? '',
+      ship_city: shipping.address.city,
+      ship_state: shipping.address.state,
+      ship_postal_code: shipping.address.postal_code,
+      ship_country: shipping.address.country,
+      status: 'label_generated',
+      me_order_id: orderId,
+      tracking_code: tracking[orderId]?.tracking ?? null,
+      label_url: printResult.url ?? null,
+      shipping_service: service.name,
+      shipping_price: parseFloat(service.price),
+      error_message: null,
+    });
+    await logEvent({
+      type: 'label_generated',
+      source: 'admin-generate-etiqueta',
+      stripe_session_id: session_id,
+      status: 'ok',
+      payload: { me_order_id: orderId, tracking_code: tracking[orderId]?.tracking, cep_used: destinationCep, cep_overridden: !!cep_override },
+    });
+
     return res.status(200).json({
       ok: true,
       session_id,
@@ -100,6 +135,15 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error(`admin-etiqueta erro:`, err.response ?? err.message);
+    await updateOrder(session_id, { status: 'label_failed', error_message: err.message });
+    await logEvent({
+      type: 'shipment_error',
+      source: 'admin-generate-etiqueta',
+      stripe_session_id: session_id,
+      status: 'error',
+      error: err.message,
+      payload: { details: err.response ?? null, cep_override: cep_override ?? null },
+    });
     await notifyShipmentError({
       ...context,
       error: { message: err.message, details: err.response ?? null },
