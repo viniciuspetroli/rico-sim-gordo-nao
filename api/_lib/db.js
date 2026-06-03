@@ -132,6 +132,15 @@ export async function setOrderStatus(stripeSessionId, status, extra = {}) {
   return data;
 }
 
+// Atualiza campos avulsos (ex.: só o rastreio) — lança erro pro painel mostrar.
+export async function patchOrder(stripeSessionId, patch) {
+  const c = db();
+  if (!c) throw new Error('banco indisponível');
+  const { data, error } = await c.from('orders').update(patch).eq('stripe_session_id', stripeSessionId).select().single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export async function listWaitlist() {
   const c = db();
   if (!c) throw new Error('banco indisponível');

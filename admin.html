@@ -418,7 +418,11 @@ function openOrder(o) {
       <div class="d-row"><span class="lbl">Endereço</span><span class="val">${esc(addr) || '—'}</span></div>
       <div class="d-row"><span class="lbl">Produto</span><span class="val">${swatch(o.color)} · ${fmtMoney(o.amount_total)}</span></div>
       ${o.shipping_service ? `<div class="d-row"><span class="lbl">Transportadora</span><span class="val">${esc(o.shipping_service)} (R$ ${esc(o.shipping_price)})</span></div>` : ''}
-      <div class="d-row"><span class="lbl">Rastreio</span><span class="val mono">${esc(o.tracking_code) || '—'}</span></div>
+      <div class="d-row" style="align-items:center"><span class="lbl">Rastreio</span>
+        <span class="cep-row" style="margin:0;flex:0 1 auto">
+          <input id="trk" placeholder="código de rastreio" value="${esc(o.tracking_code) || ''}" style="width:180px" />
+          <button class="btn" onclick="saveTracking('${o.stripe_session_id}', this)">Salvar</button>
+        </span></div>
       ${o.error_message ? `<div class="d-row"><span class="lbl">Erro</span><span class="val" style="color:var(--red)">${esc(o.error_message)}</span></div>` : ''}</div>
     <div class="d-section"><h4>Ações</h4><div class="actions">
       ${o.label_url ? `<a class="btn btn-primary" href="${esc(o.label_url)}" target="_blank">🏷️ Abrir etiqueta (PDF)</a>` : ''}
@@ -438,9 +442,21 @@ $('#drawer-close').addEventListener('click', closeDrawer);
 $('#drawer-bg').addEventListener('click', closeDrawer);
 
 async function setStatus(sid, status) {
-  try { await api('/api/admin/order-update', { method: 'POST', body: JSON.stringify({ session_id: sid, status }) });
+  // se tiver rastreio digitado, salva junto (útil ao marcar "enviado")
+  const trkEl = $('#trk');
+  const body = { session_id: sid, status };
+  if (trkEl && trkEl.value.trim()) body.tracking_code = trkEl.value.trim();
+  try { await api('/api/admin/order-update', { method: 'POST', body: JSON.stringify(body) });
     toast('Status atualizado'); closeDrawer(); await fetchOrders(); renderSegs(); renderOrders();
   } catch (err) { toast(err.message, true); }
+}
+async function saveTracking(sid, btn) {
+  const val = $('#trk').value.trim();
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = '…';
+  try { await api('/api/admin/order-update', { method: 'POST', body: JSON.stringify({ session_id: sid, tracking_code: val }) });
+    toast('Rastreio salvo'); await fetchOrders();
+  } catch (err) { toast(err.message, true); }
+  finally { btn.disabled = false; btn.textContent = orig; }
 }
 async function regen(sid, cep, btn) {
   btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Gerando…';

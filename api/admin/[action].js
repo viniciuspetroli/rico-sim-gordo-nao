@@ -6,7 +6,7 @@
 
 import { checkPassword, createSessionCookie, clearSessionCookie, isAuthed, requireAuth } from './_auth.js';
 import {
-  listOrders, getStats, setOrderStatus, listWaitlist, listEvents,
+  listOrders, getStats, setOrderStatus, patchOrder, listWaitlist, listEvents,
   getDrops, setDropAvailable, setDropStock, logEvent,
 } from '../_lib/db.js';
 
@@ -40,12 +40,19 @@ export default async function handler(req, res) {
       case 'order-update': {
         if (req.method !== 'POST') return res.status(405).json({ error: 'use POST' });
         const { session_id, status, tracking_code } = req.body ?? {};
-        if (!session_id || !status) return res.status(400).json({ error: 'session_id e status obrigatórios' });
-        if (!STATUS_ALLOWED.includes(status)) return res.status(400).json({ error: `status inválido (use: ${STATUS_ALLOWED.join(', ')})` });
-        const extra = {};
-        if (tracking_code !== undefined) extra.tracking_code = tracking_code;
-        const order = await setOrderStatus(session_id, status, extra);
-        await logEvent({ type: 'status_change', source: 'admin-panel', stripe_session_id: session_id, status: 'ok', payload: { new_status: status } });
+        if (!session_id) return res.status(400).json({ error: 'session_id obrigatório' });
+        if (!status && tracking_code === undefined) return res.status(400).json({ error: 'informe status ou tracking_code' });
+        let order;
+        if (status) {
+          if (!STATUS_ALLOWED.includes(status)) return res.status(400).json({ error: `status inválido (use: ${STATUS_ALLOWED.join(', ')})` });
+          const extra = {};
+          if (tracking_code !== undefined) extra.tracking_code = tracking_code;
+          order = await setOrderStatus(session_id, status, extra);
+          await logEvent({ type: 'status_change', source: 'admin-panel', stripe_session_id: session_id, status: 'ok', payload: { new_status: status, tracking_code } });
+        } else {
+          order = await patchOrder(session_id, { tracking_code });
+          await logEvent({ type: 'tracking_update', source: 'admin-panel', stripe_session_id: session_id, status: 'ok', payload: { tracking_code } });
+        }
         return res.status(200).json({ ok: true, order });
       }
 
