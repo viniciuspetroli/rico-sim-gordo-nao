@@ -105,6 +105,7 @@ async function handler(req, res) {
       color: items.primaryColor,
       product_name: items.summary,
       quantity: items.totalQty,
+      items: items.qtyByColor,
       amount_total: session.amount_total,
       currency: session.currency,
       ship_line1: shipping.address.line1,

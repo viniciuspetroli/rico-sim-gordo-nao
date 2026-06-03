@@ -47,7 +47,7 @@ async function handler(req, res) {
   try {
     const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 10, expand: ['data.price.product'] });
     const items = buildOrderItems(lineItems.data);
-    context.product = items ? { summary: items.summary, color: items.primaryColor, qty: items.totalQty } : { raw: lineItems.data[0]?.price?.product?.name };
+    context.product = items ? { summary: items.summary, color: items.primaryColor, qty: items.totalQty, qtyByColor: items.qtyByColor } : { raw: lineItems.data[0]?.price?.product?.name };
     if (!items) throw new Error(`Não consegui identificar a cor do produto: ${lineItems.data[0]?.price?.product?.name}`);
 
     const shipping = session.shipping_details ?? session.collected_information?.shipping_details;
@@ -82,6 +82,7 @@ async function handler(req, res) {
       color: items.primaryColor,
       product_name: items.summary,
       quantity: items.totalQty,
+      items: items.qtyByColor,
       amount_total: session.amount_total,
       currency: session.currency,
       ship_line1: shipping.address.line1,
@@ -171,6 +172,7 @@ async function handler(req, res) {
       color: context.product?.color ?? null,
       product_name: context.product?.summary ?? context.product?.raw ?? null,
       quantity: context.product?.qty ?? 1,
+      items: context.product?.qtyByColor ?? null,
       amount_total: context.amount_total ?? session.amount_total ?? null,
       currency: context.currency ?? session.currency ?? 'brl',
       ship_line1: context.shipping_address?.line1 ?? null,

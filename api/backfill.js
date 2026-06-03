@@ -53,6 +53,7 @@ async function handler(req, res) {
             color: items?.primaryColor ?? null,
             product_name: items?.summary ?? (lineItems.data[0]?.price?.product?.name ?? null),
             quantity: items?.totalQty ?? 1,
+            items: items?.qtyByColor ?? null,
             amount_total: session.amount_total ?? null,
             currency: session.currency ?? 'brl',
             ship_line1: addr.line1 ?? null,

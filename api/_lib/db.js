@@ -201,13 +201,18 @@ export async function setDropStock(color, stock) {
 export async function getStats() {
   const c = db();
   if (!c) throw new Error('banco indisponível');
-  const { data, error } = await c.from('orders').select('status, color, amount_total');
+  const { data, error } = await c.from('orders').select('status, color, items, quantity, amount_total');
   if (error) throw new Error(error.message);
   const stats = { total: data.length, revenue: 0, by_status: {}, by_color: {} };
   for (const o of data) {
     stats.revenue += o.amount_total ?? 0;
     stats.by_status[o.status] = (stats.by_status[o.status] ?? 0) + 1;
-    if (o.color) stats.by_color[o.color] = (stats.by_color[o.color] ?? 0) + 1;
+    // unidades por cor: usa o detalhamento (items) quando existe; senão cai na cor única.
+    if (o.items && typeof o.items === 'object' && Object.keys(o.items).length) {
+      for (const [color, qty] of Object.entries(o.items)) stats.by_color[color] = (stats.by_color[color] ?? 0) + Number(qty || 0);
+    } else if (o.color) {
+      stats.by_color[o.color] = (stats.by_color[o.color] ?? 0) + (o.quantity ?? 1);
+    }
   }
   return stats;
 }
