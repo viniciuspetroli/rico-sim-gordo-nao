@@ -4,7 +4,7 @@
 
 import Stripe from 'stripe';
 import { pickCheapestService, addToCart, checkoutAndGenerate, getPrintUrl, getTracking } from './_lib/melhor-envio.js';
-import { PRODUCT_BY_COLOR, detectColorFromProductName, normalizeStateUf, getRecipientCpf } from './_lib/config.js';
+import { normalizeStateUf, getRecipientCpf, buildOrderItems } from './_lib/config.js';
 import { notifyShipmentError } from './_lib/notify.js';
 import { upsertOrder, updateOrder, logEvent, registerSale } from './_lib/db.js';
 import { withRequestLog } from './_lib/reqlog.js';
@@ -46,11 +46,9 @@ async function handler(req, res) {
 
   try {
     const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 10, expand: ['data.price.product'] });
-    const productName = lineItems.data[0]?.price?.product?.name;
-    const color = detectColorFromProductName(productName);
-    context.product = { name: productName, color };
-    if (!color) throw new Error(`Não consegui identificar a cor do produto: ${productName}`);
-    const product = PRODUCT_BY_COLOR[color];
+    const items = buildOrderItems(lineItems.data);
+    context.product = items ? { summary: items.summary, color: items.primaryColor, qty: items.totalQty } : { raw: lineItems.data[0]?.price?.product?.name };
+    if (!items) throw new Error(`Não consegui identificar a cor do produto: ${lineItems.data[0]?.price?.product?.name}`);
 
     const shipping = session.shipping_details ?? session.collected_information?.shipping_details;
     if (!shipping?.address) throw new Error('Sessão sem endereço de entrega — confira que o Payment Link tá coletando endereço');
@@ -81,8 +79,9 @@ async function handler(req, res) {
       buyer_email: context.buyer.email,
       buyer_phone: context.buyer.phone,
       buyer_cpf: context.buyer.document,
-      color,
-      product_name: productName,
+      color: items.primaryColor,
+      product_name: items.summary,
+      quantity: items.totalQty,
       amount_total: session.amount_total,
       currency: session.currency,
       ship_line1: shipping.address.line1,
@@ -94,8 +93,8 @@ async function handler(req, res) {
       status: 'paid',
     });
 
-    // Desconta 1 do estoque da cor (idempotente — não desconta 2x no mesmo pedido).
-    await registerSale(session.id, color);
+    // Desconta o estoque por cor/quantidade (idempotente — não desconta 2x no mesmo pedido).
+    await registerSale(session.id, items.qtyByColor);
 
     const destinationCep = shipping.address.postal_code.replace(/\D/g, '');
     const destinationAddress = {
@@ -110,15 +109,18 @@ async function handler(req, res) {
 
     const service = await pickCheapestService({
       destination: { postal_code: destinationCep },
-      insuranceValue: product.unitary_value,
+      insuranceValue: items.insuranceValue,
+      pkg: items.pkg,
     });
-    console.log(`Stripe ${session.id}: serviço escolhido ${service.name} R$${service.price}`);
+    console.log(`Stripe ${session.id}: serviço escolhido ${service.name} R$${service.price} (${items.summary})`);
 
     const cartItem = await addToCart({
       service,
       destination: destinationAddress,
       recipient: context.buyer,
-      product,
+      products: items.products,
+      insuranceValue: items.insuranceValue,
+      pkg: items.pkg,
     });
     const orderId = cartItem.id;
 
@@ -167,7 +169,8 @@ async function handler(req, res) {
       buyer_phone: context.buyer?.phone ?? null,
       buyer_cpf: context.buyer?.document ?? null,
       color: context.product?.color ?? null,
-      product_name: context.product?.name ?? null,
+      product_name: context.product?.summary ?? context.product?.raw ?? null,
+      quantity: context.product?.qty ?? 1,
       amount_total: context.amount_total ?? session.amount_total ?? null,
       currency: context.currency ?? session.currency ?? 'brl',
       ship_line1: context.shipping_address?.line1 ?? null,

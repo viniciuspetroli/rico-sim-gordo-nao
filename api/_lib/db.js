@@ -82,12 +82,13 @@ export async function saveWaitlist(record) {
   }
 }
 
-// Desconta 1 do estoque da cor (idempotente por pedido). Engole erro.
-export async function registerSale(stripeSessionId, color) {
+// Desconta o estoque por cor/quantidade (idempotente por pedido). Engole erro.
+// itemsMap: { verde: 3, marrom: 1 }
+export async function registerSale(stripeSessionId, itemsMap) {
   const c = db();
-  if (!c || !color) return;
+  if (!c || !itemsMap || !Object.keys(itemsMap).length) return;
   try {
-    const { error } = await c.rpc('register_sale', { p_session_id: stripeSessionId, p_color: color });
+    const { error } = await c.rpc('register_sale', { p_session_id: stripeSessionId, p_items: itemsMap });
     if (error) console.error('[db] registerSale:', error.message);
   } catch (err) {
     console.error('[db] registerSale exceção:', err.message);

@@ -13,7 +13,7 @@
 
 import Stripe from 'stripe';
 import { pickCheapestService, addToCart, checkoutAndGenerate, getPrintUrl, getTracking } from './_lib/melhor-envio.js';
-import { PRODUCT_BY_COLOR, detectColorFromProductName, normalizeStateUf, getRecipientCpf } from './_lib/config.js';
+import { normalizeStateUf, getRecipientCpf, buildOrderItems } from './_lib/config.js';
 import { notifyShipmentError } from './_lib/notify.js';
 import { upsertOrder, updateOrder, logEvent } from './_lib/db.js';
 import { withRequestLog } from './_lib/reqlog.js';
@@ -35,11 +35,9 @@ async function handler(req, res) {
   try {
     const session = await stripe.checkout.sessions.retrieve(session_id);
     const lineItems = await stripe.checkout.sessions.listLineItems(session_id, { limit: 10, expand: ['data.price.product'] });
-    const productName = lineItems.data[0]?.price?.product?.name;
-    const color = detectColorFromProductName(productName);
-    context.product = { name: productName, color };
-    if (!color) throw new Error(`Não consegui identificar a cor do produto: ${productName}`);
-    const product = PRODUCT_BY_COLOR[color];
+    const items = buildOrderItems(lineItems.data);
+    context.product = items ? { summary: items.summary, color: items.primaryColor, qty: items.totalQty } : null;
+    if (!items) throw new Error(`Não consegui identificar a cor do produto: ${lineItems.data[0]?.price?.product?.name}`);
 
     const shipping = session.shipping_details ?? session.collected_information?.shipping_details;
     if (!shipping?.address) throw new Error('Sessão sem endereço de entrega');
@@ -75,11 +73,19 @@ async function handler(req, res) {
 
     const service = await pickCheapestService({
       destination: { postal_code: destinationCep },
-      insuranceValue: product.unitary_value,
+      insuranceValue: items.insuranceValue,
+      pkg: items.pkg,
     });
-    console.log(`admin-etiqueta ${session_id}: serviço ${service.name} R$${service.price} pra CEP ${destinationCep}`);
+    console.log(`admin-etiqueta ${session_id}: serviço ${service.name} R$${service.price} pra CEP ${destinationCep} (${items.summary})`);
 
-    const cartItem = await addToCart({ service, destination: destinationAddress, recipient: context.buyer, product });
+    const cartItem = await addToCart({
+      service,
+      destination: destinationAddress,
+      recipient: context.buyer,
+      products: items.products,
+      insuranceValue: items.insuranceValue,
+      pkg: items.pkg,
+    });
     const orderId = cartItem.id;
 
     await checkoutAndGenerate([orderId]);
@@ -96,8 +102,9 @@ async function handler(req, res) {
       buyer_email: context.buyer.email,
       buyer_phone: context.buyer.phone,
       buyer_cpf: context.buyer.document,
-      color,
-      product_name: productName,
+      color: items.primaryColor,
+      product_name: items.summary,
+      quantity: items.totalQty,
       amount_total: session.amount_total,
       currency: session.currency,
       ship_line1: shipping.address.line1,
@@ -127,7 +134,8 @@ async function handler(req, res) {
       session_id,
       cep_used: destinationCep,
       cep_overridden: !!cep_override,
-      color,
+      color: items.primaryColor,
+      summary: items.summary,
       service: service.name,
       price: service.price,
       me_order_id: orderId,

@@ -107,12 +107,13 @@ async function meRequest(path, { method = 'GET', body } = {}) {
   return data;
 }
 
-// Calcula fretes disponíveis e retorna o mais barato com prazo razoável.
-export async function pickCheapestService({ destination, insuranceValue }) {
+// Calcula fretes disponíveis e retorna o mais barato. Aceita pacote customizado
+// (peso escalado pela quantidade).
+export async function pickCheapestService({ destination, insuranceValue, pkg }) {
   const body = {
     from: { postal_code: ORIGIN_ADDRESS.postal_code },
     to: { postal_code: destination.postal_code },
-    package: PACKAGE_DIMENSIONS,
+    package: pkg ?? PACKAGE_DIMENSIONS,
     options: {
       insurance_value: insuranceValue,
       receipt: false,
@@ -126,16 +127,17 @@ export async function pickCheapestService({ destination, insuranceValue }) {
   return valid[0];
 }
 
-// Adiciona um envio ao carrinho do ME. Retorna o id do shipment.
-export async function addToCart({ service, destination, recipient, product }) {
+// Adiciona um envio ao carrinho do ME. Aceita vários produtos (uma linha por cor),
+// valor de seguro total e pacote (peso escalado). Retorna o id do shipment.
+export async function addToCart({ service, destination, recipient, products, insuranceValue, pkg }) {
   const payload = {
     service: service.id,
     from: ORIGIN_ADDRESS,
     to: { ...destination, ...recipient },
-    products: [product],
-    volumes: [PACKAGE_DIMENSIONS],
+    products,
+    volumes: [pkg ?? PACKAGE_DIMENSIONS],
     options: {
-      insurance_value: product.unitary_value,
+      insurance_value: insuranceValue,
       receipt: false,
       own_hand: false,
       reverse: false,

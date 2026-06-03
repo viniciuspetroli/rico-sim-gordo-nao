@@ -9,7 +9,7 @@
 // pra frente o webhook já grava o status certo sozinho.
 
 import Stripe from 'stripe';
-import { detectColorFromProductName, getRecipientCpf } from './_lib/config.js';
+import { getRecipientCpf, buildOrderItems } from './_lib/config.js';
 import { upsertOrder } from './_lib/db.js';
 import { withRequestLog } from './_lib/reqlog.js';
 
@@ -39,8 +39,7 @@ async function handler(req, res) {
         if (session.payment_status !== 'paid' && session.status !== 'complete') { skipped++; continue; }
         try {
           const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 5, expand: ['data.price.product'] });
-          const productName = lineItems.data[0]?.price?.product?.name ?? null;
-          const color = detectColorFromProductName(productName);
+          const items = buildOrderItems(lineItems.data);
           const shipping = session.shipping_details ?? session.collected_information?.shipping_details ?? {};
           const addr = shipping.address ?? {};
 
@@ -51,8 +50,9 @@ async function handler(req, res) {
             buyer_email: session.customer_details?.email ?? null,
             buyer_phone: session.customer_details?.phone ?? null,
             buyer_cpf: getRecipientCpf(session),
-            color,
-            product_name: productName,
+            color: items?.primaryColor ?? null,
+            product_name: items?.summary ?? (lineItems.data[0]?.price?.product?.name ?? null),
+            quantity: items?.totalQty ?? 1,
             amount_total: session.amount_total ?? null,
             currency: session.currency ?? 'brl',
             ship_line1: addr.line1 ?? null,
@@ -64,7 +64,7 @@ async function handler(req, res) {
             status: 'paid',
           });
           imported++;
-          details.push({ session: session.id, buyer: shipping.name ?? null, color });
+          details.push({ session: session.id, buyer: shipping.name ?? null, color: items?.primaryColor ?? null });
         } catch (e) {
           errors++;
           details.push({ session: session.id, error: e.message });

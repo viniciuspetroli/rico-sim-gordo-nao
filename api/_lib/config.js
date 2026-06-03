@@ -56,6 +56,32 @@ export function detectColorFromProductName(name) {
   return null;
 }
 
+// Monta itens/quantidades a partir dos line items do Stripe.
+// Lida com quantidade > 1 e (defensivamente) com mais de uma cor no mesmo pedido.
+export function buildOrderItems(lineItems) {
+  const qtyByColor = {};
+  for (const li of lineItems) {
+    const name = li.price?.product?.name;
+    const color = detectColorFromProductName(name);
+    if (!color) continue;
+    qtyByColor[color] = (qtyByColor[color] ?? 0) + (li.quantity ?? 1);
+  }
+  const colors = Object.keys(qtyByColor);
+  if (!colors.length) return null;
+
+  const totalQty = colors.reduce((s, c) => s + qtyByColor[c], 0);
+  const products = colors.map(c => ({
+    name: PRODUCT_BY_COLOR[c].name,
+    quantity: qtyByColor[c],
+    unitary_value: PRODUCT_BY_COLOR[c].unitary_value,
+  }));
+  const insuranceValue = products.reduce((s, p) => s + p.unitary_value * p.quantity, 0);
+  const pkg = { ...PACKAGE_DIMENSIONS, weight: +(PACKAGE_DIMENSIONS.weight * totalQty).toFixed(3) };
+  const summary = colors.map(c => `${qtyByColor[c]}× ${c}`).join(', ');
+
+  return { qtyByColor, products, totalQty, primaryColor: colors[0], multiColor: colors.length > 1, insuranceValue, pkg, summary };
+}
+
 const BR_STATE_TO_UF = {
   'acre': 'AC', 'alagoas': 'AL', 'amapá': 'AP', 'amapa': 'AP',
   'amazonas': 'AM', 'bahia': 'BA', 'ceará': 'CE', 'ceara': 'CE',

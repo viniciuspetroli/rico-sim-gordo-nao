@@ -100,6 +100,8 @@ create table if not exists public.drops (
 alter table public.drops add column if not exists stock integer;
 -- flag pra não descontar estoque duas vezes no mesmo pedido (reenvio de webhook):
 alter table public.orders add column if not exists stock_decremented boolean default false;
+-- quantidade total de unidades no pedido:
+alter table public.orders add column if not exists quantity integer default 1;
 
 -- Seed inicial: verde esgotado, marrom disponível
 insert into public.drops (color, label, available, stripe_payment_link, sort) values
@@ -107,13 +109,18 @@ insert into public.drops (color, label, available, stripe_payment_link, sort) va
   ('marrom', 'Marrom terra',  true,  'https://buy.stripe.com/fZuaEXaCr7YA7Nw7sC7EQ01', 2)
 on conflict (color) do nothing;
 
--- Desconta 1 do estoque por venda, no máximo uma vez por pedido (idempotente).
-create or replace function public.register_sale(p_session_id text, p_color text)
+-- Desconta o estoque por quantidade e por cor, no máximo uma vez por pedido.
+-- p_items é um jsonb tipo {"verde": 3, "marrom": 1}.
+drop function if exists public.register_sale(text, text);
+create or replace function public.register_sale(p_session_id text, p_items jsonb)
 returns void language plpgsql as $$
+declare _color text; _qty int;
 begin
   if exists (select 1 from public.orders where stripe_session_id = p_session_id and coalesce(stock_decremented, false) = false) then
-    update public.drops set stock = greatest(coalesce(stock, 0) - 1, 0)
-      where color = p_color and stock is not null;
+    for _color, _qty in select key, value::int from jsonb_each_text(p_items) loop
+      update public.drops set stock = greatest(coalesce(stock, 0) - _qty, 0)
+        where color = _color and stock is not null;
+    end loop;
     update public.orders set stock_decremented = true where stripe_session_id = p_session_id;
   end if;
 end; $$;

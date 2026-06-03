@@ -427,7 +427,7 @@ function renderOrders() {
       return `<tr class="clickable" data-i="${i}">
         <td class="muted">${fmtDate(o.created_at)}</td>
         <td>${esc(o.buyer_name) || '—'}<div class="muted" style="font-size:12px">${esc(o.buyer_email) || ''}</div></td>
-        <td>${swatch(o.color)}</td><td>${fmtMoney(o.amount_total)}</td>
+        <td>${swatch(o.color)}${o.quantity > 1 ? ` <b>×${o.quantity}</b>` : ''}</td><td>${fmtMoney(o.amount_total)}</td>
         <td>${badge(o.status)}</td><td style="text-align:right">${quick}</td></tr>`;
     }).join('')}</tbody></table>`;
   document.querySelectorAll('#orders-body tr.clickable').forEach(tr => tr.addEventListener('click', () => openOrder(ALL_ORDERS[tr.dataset.i])));
@@ -477,7 +477,7 @@ function openOrder(o) {
       <div class="d-row"><span class="lbl">CPF</span><span class="val mono">${esc(o.buyer_cpf) || '—'}</span></div></div>
     <div class="d-section"><h4>Entrega</h4>
       <div class="d-row"><span class="lbl">Endereço</span><span class="val">${esc(addr) || '—'}</span></div>
-      <div class="d-row"><span class="lbl">Produto</span><span class="val">${swatch(o.color)} · ${fmtMoney(o.amount_total)}</span></div>
+      <div class="d-row"><span class="lbl">Produto</span><span class="val">${esc(o.product_name) || swatch(o.color)}${o.quantity > 1 ? ` · ${o.quantity} un` : ''} · ${fmtMoney(o.amount_total)}</span></div>
       ${o.shipping_service ? `<div class="d-row"><span class="lbl">Transportadora</span><span class="val">${esc(o.shipping_service)} (R$ ${esc(o.shipping_price)})</span></div>` : ''}
       <div class="d-row" style="align-items:center"><span class="lbl">Rastreio</span>
         <span class="cep-row" style="margin:0;flex:0 1 auto">
