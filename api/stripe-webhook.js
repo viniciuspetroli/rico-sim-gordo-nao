@@ -4,7 +4,7 @@
 
 import Stripe from 'stripe';
 import { pickCheapestService, addToCart, checkoutAndGenerate, getPrintUrl, getTracking } from './_lib/melhor-envio.js';
-import { normalizeStateUf, getRecipientCpf, buildOrderItems } from './_lib/config.js';
+import { normalizeStateUf, getRecipientCpf, buildOrderItems, describeError } from './_lib/config.js';
 import { notifyShipmentError } from './_lib/notify.js';
 import { upsertOrder, updateOrder, logEvent, registerSale, getOrderBySession } from './_lib/db.js';
 import { withRequestLog } from './_lib/reqlog.js';
@@ -191,14 +191,14 @@ async function handler(req, res) {
       ship_postal_code: context.shipping_address?.postal_code ?? null,
       ship_country: context.shipping_address?.country ?? null,
       status: 'label_failed',
-      error_message: err.message,
+      error_message: describeError(err),
     });
     await logEvent({
       type: 'shipment_error',
       source: 'stripe-webhook',
       stripe_session_id: session.id,
       status: 'error',
-      error: err.message,
+      error: describeError(err),
       payload: { details: err.response ?? null, buyer: context.buyer ?? null, shipping_address: context.shipping_address ?? null },
     });
     await notifyShipmentError({

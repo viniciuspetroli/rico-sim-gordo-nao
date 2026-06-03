@@ -13,7 +13,7 @@
 
 import Stripe from 'stripe';
 import { pickCheapestService, addToCart, checkoutAndGenerate, getPrintUrl, getTracking } from './_lib/melhor-envio.js';
-import { normalizeStateUf, getRecipientCpf, buildOrderItems } from './_lib/config.js';
+import { normalizeStateUf, getRecipientCpf, buildOrderItems, describeError } from './_lib/config.js';
 import { notifyShipmentError } from './_lib/notify.js';
 import { upsertOrder, updateOrder, logEvent } from './_lib/db.js';
 import { withRequestLog } from './_lib/reqlog.js';
@@ -145,13 +145,13 @@ async function handler(req, res) {
     });
   } catch (err) {
     console.error(`admin-etiqueta erro:`, err.response ?? err.message);
-    await updateOrder(session_id, { status: 'label_failed', error_message: err.message });
+    await updateOrder(session_id, { status: 'label_failed', error_message: describeError(err) });
     await logEvent({
       type: 'shipment_error',
       source: 'admin-generate-etiqueta',
       stripe_session_id: session_id,
       status: 'error',
-      error: err.message,
+      error: describeError(err),
       payload: { details: err.response ?? null, cep_override: cep_override ?? null },
     });
     await notifyShipmentError({

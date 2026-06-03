@@ -56,6 +56,22 @@ export function detectColorFromProductName(name) {
   return null;
 }
 
+// Extrai uma mensagem de erro legível (do ME ou genérica) pra mostrar no painel.
+export function describeError(err) {
+  const r = err?.response;
+  if (r) {
+    if (typeof r === 'string') return r;
+    if (r.error) return r.error;
+    if (r.message) return r.message;
+    if (r.errors && typeof r.errors === 'object') {
+      const msgs = Object.values(r.errors).flat().filter(Boolean);
+      if (msgs.length) return msgs.join(' · ');
+    }
+    try { return `${err.message}: ${JSON.stringify(r)}`; } catch { /* ignore */ }
+  }
+  return err?.message ?? 'erro desconhecido';
+}
+
 // Monta itens/quantidades a partir dos line items do Stripe.
 // Lida com quantidade > 1 e (defensivamente) com mais de uma cor no mesmo pedido.
 export function buildOrderItems(lineItems) {
