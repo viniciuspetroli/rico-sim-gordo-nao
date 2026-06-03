@@ -36,19 +36,36 @@
   .login-err { color: var(--red); font-size: 13px; margin-top: 8px; min-height: 18px; }
 
   /* LAYOUT */
+  :root { --sidebar-w: 236px; }
   #app { display: none; }
-  .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 236px; background: var(--card); border-right: 1px solid var(--border); padding: 20px 12px; display: flex; flex-direction: column; }
-  .brand { font-size: 14px; font-weight: 800; padding: 8px 12px 22px; line-height: 1.3; }
-  .brand small { display: block; color: var(--mute); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 3px; }
-  .nav-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 8px; color: var(--soft); font-weight: 500; margin-bottom: 2px; border: none; background: none; width: 100%; text-align: left; font-size: 14px; }
+  .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w); background: var(--card); border-right: 1px solid var(--border); padding: 16px 12px; display: flex; flex-direction: column; transition: width .2s ease, transform .2s ease; z-index: 60; overflow: hidden; }
+  .sidebar-head { display: flex; align-items: center; gap: 8px; padding: 4px 6px 18px; }
+  .nav-toggle { border: none; background: none; font-size: 20px; color: var(--soft); cursor: pointer; padding: 6px 8px; border-radius: 8px; line-height: 1; }
+  .nav-toggle:hover { background: var(--bg); }
+  .brand { font-size: 14px; font-weight: 800; line-height: 1.25; white-space: nowrap; }
+  .brand small { display: block; color: var(--mute); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px; }
+  .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; color: var(--soft); font-weight: 500; margin-bottom: 2px; border: none; background: none; width: 100%; text-align: left; font-size: 14px; white-space: nowrap; }
   .nav-item:hover { background: var(--bg); color: var(--text); }
   .nav-item.active { background: var(--purple-soft); color: var(--purple); font-weight: 600; }
-  .nav-item .ico { font-size: 16px; width: 20px; text-align: center; }
-  .nav-item .count { margin-left: auto; background: var(--red); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 10px; display: none; }
+  .nav-item .ico { font-size: 17px; width: 22px; text-align: center; flex-shrink: 0; }
+  .nav-item .lbl { flex: 1; }
+  .nav-item .count { background: var(--red); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 10px; display: none; }
   .nav-item .count.show { display: inline-block; }
   .nav-spacer { flex: 1; }
 
-  .main { margin-left: 236px; padding: 28px 32px 60px; max-width: 1100px; }
+  /* sidebar recolhida — só ícones */
+  body.collapsed { --sidebar-w: 70px; }
+  body.collapsed .brand, body.collapsed .nav-item .lbl, body.collapsed .nav-item .count { display: none; }
+  body.collapsed .nav-item { justify-content: center; padding: 10px 0; }
+  body.collapsed .sidebar-head { justify-content: center; }
+
+  #mobile-bar { display: none; position: fixed; top: 0; left: 0; right: 0; height: 54px; background: var(--card); border-bottom: 1px solid var(--border); align-items: center; gap: 12px; padding: 0 16px; z-index: 40; }
+  #mobile-bar .burger { border: none; background: none; font-size: 22px; cursor: pointer; color: var(--text); }
+  #mobile-bar b { font-size: 14px; }
+  #nav-overlay { display: none; position: fixed; inset: 0; background: rgba(26,31,54,0.4); z-index: 55; }
+
+  .main { margin-left: var(--sidebar-w); padding: 28px 32px 60px; transition: margin-left .2s ease; }
+  .main section { max-width: 1060px; margin: 0 auto; }
   .page-head { margin-bottom: 22px; }
   .page-head h2 { font-size: 22px; }
   .page-head .sub { color: var(--soft); font-size: 13px; margin-top: 3px; }
@@ -141,6 +158,8 @@
   .btn-primary { background: var(--purple); color: #fff; border-color: var(--purple); }
   .btn-primary:hover { background: var(--purple-dark); }
   .btn-row { display: flex; gap: 8px; } .btn-row .btn { flex: 1; }
+  .status-select { width: 100%; padding: 11px 12px; border: 1px solid var(--border); border-radius: 9px; font-size: 14px; font-weight: 600; background: var(--card); color: var(--text); cursor: pointer; }
+  .status-select:focus { outline: none; border-color: var(--purple); }
   .cep-row { display: flex; gap: 8px; margin-top: 6px; }
   .cep-row input { flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 9px; font-size: 13px; }
 
@@ -160,9 +179,15 @@
   .loading { padding: 48px; text-align: center; color: var(--mute); }
 
   @media (max-width: 720px) {
-    .sidebar { width: 100%; position: relative; flex-direction: row; flex-wrap: wrap; height: auto; }
-    .nav-spacer { display: none; } .main { margin-left: 0; padding: 18px; }
-    .nav-item { width: auto; }
+    .sidebar { transform: translateX(-100%); width: 236px; }
+    body.nav-open .sidebar { transform: translateX(0); }
+    body.nav-open #nav-overlay { display: block; }
+    .main { margin-left: 0; padding: 70px 16px 48px; }
+    #mobile-bar { display: flex; }
+    .sidebar .nav-toggle { display: none; }      /* no mobile usa o X do overlay/burger */
+    body.collapsed { --sidebar-w: 236px; }        /* ignora "recolhido" no mobile */
+    body.collapsed .brand, body.collapsed .nav-item .lbl { display: block; }
+    body.collapsed .nav-item { justify-content: flex-start; padding: 10px 12px; }
   }
 </style>
 </head>
@@ -179,15 +204,20 @@
 </div>
 
 <div id="app">
+  <div id="mobile-bar"><button class="burger" id="mobile-burger">☰</button><b>rico sim, gordo não</b></div>
+  <div id="nav-overlay"></div>
   <aside class="sidebar">
-    <div class="brand">rico sim, gordo não<small>painel</small></div>
-    <button class="nav-item active" data-view="overview"><span class="ico">🏠</span> Visão geral</button>
-    <button class="nav-item" data-view="orders"><span class="ico">📦</span> Pedidos <span class="count" id="nav-orders-count"></span></button>
-    <button class="nav-item" data-view="drops"><span class="ico">🎯</span> Drops</button>
-    <button class="nav-item" data-view="waitlist"><span class="ico">📋</span> Lista de espera</button>
-    <button class="nav-item" data-view="events"><span class="ico">🔔</span> Atividade</button>
+    <div class="sidebar-head">
+      <button class="nav-toggle" id="nav-toggle" title="Recolher menu">☰</button>
+      <div class="brand">rico sim, gordo não<small>painel</small></div>
+    </div>
+    <button class="nav-item active" data-view="overview"><span class="ico">🏠</span><span class="lbl">Visão geral</span></button>
+    <button class="nav-item" data-view="orders"><span class="ico">📦</span><span class="lbl">Pedidos</span><span class="count" id="nav-orders-count"></span></button>
+    <button class="nav-item" data-view="drops"><span class="ico">🎯</span><span class="lbl">Drops</span></button>
+    <button class="nav-item" data-view="waitlist"><span class="ico">📋</span><span class="lbl">Lista de espera</span></button>
+    <button class="nav-item" data-view="events"><span class="ico">🔔</span><span class="lbl">Atividade</span></button>
     <div class="nav-spacer"></div>
-    <button class="nav-item" id="logout-btn"><span class="ico">↩</span> Sair</button>
+    <button class="nav-item" id="logout-btn"><span class="ico">↩</span><span class="lbl">Sair</span></button>
   </aside>
 
   <main class="main">
@@ -244,6 +274,7 @@ const fmtMoney = c => c == null ? '—' : 'R$ ' + (c / 100).toFixed(2).replace('
 const fmtDate = s => s ? new Date(s).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const swatch = c => c ? `<span class="swatch sw-${c}"></span>${c}` : '—';
+const dot = c => c ? `<span class="swatch sw-${c}"></span>` : '';
 
 const STATUS = {
   paid:            { label: 'Aguardando etiqueta', icon: '🕐' },
@@ -293,8 +324,20 @@ function goto(view) {
   document.querySelector(`.nav-item[data-view="${view}"]`)?.classList.add('active');
   document.querySelectorAll('main section').forEach(s => s.style.display = 'none');
   $('#view-' + view).style.display = 'block';
+  document.body.classList.remove('nav-open'); // fecha o drawer no mobile ao navegar
   LOADERS[view]();
 }
+
+// SIDEBAR retrátil / mobile
+const isMobile = () => window.matchMedia('(max-width: 720px)').matches;
+$('#nav-toggle').addEventListener('click', () => {
+  if (isMobile()) { document.body.classList.toggle('nav-open'); return; }
+  document.body.classList.toggle('collapsed');
+  localStorage.setItem('sb_collapsed', document.body.classList.contains('collapsed') ? '1' : '0');
+});
+$('#mobile-burger').addEventListener('click', () => document.body.classList.toggle('nav-open'));
+$('#nav-overlay').addEventListener('click', () => document.body.classList.remove('nav-open'));
+if (localStorage.getItem('sb_collapsed') === '1') document.body.classList.add('collapsed');
 
 // estado compartilhado
 let ALL_ORDERS = [], DROPS = [], CUR_SEG = 'all';
@@ -328,10 +371,13 @@ async function loadOverview() {
     if (waiting) acts += actionCard('ac-amber', waiting, 'Aguardando etiqueta', 'Pagos mas sem etiqueta confirmada (inclui pedidos antigos importados).', 'aguardando');
     $('#ov-actions').innerHTML = acts || `<div class="all-clear">✅ Tudo em dia. Nenhum pedido precisa de ação agora.</div>`;
 
-    $('#ov-drops').innerHTML = DROPS.map(d => `
-      <div class="card drop-card"><div class="top"><h3>${swatch(d.color)} ${esc(d.label)}</h3>
-        <span class="badge ${d.available ? 'b-delivered' : 'b-refunded'}">${d.available ? '🟢 À venda' : '🔴 Esgotado'}</span></div>
-        <div class="state">${d.available ? 'Aparece com botão de compra no site.' : 'Mostra "ESGOTADO" + "me avise quando voltar".'}</div></div>`).join('');
+    $('#ov-drops').innerHTML = DROPS.map(d => {
+      const inStock = d.stock === null || d.stock === undefined || d.stock > 0;
+      const live = d.available && inStock;
+      return `<div class="card drop-card"><div class="top"><h3>${dot(d.color)} ${esc(d.label)}</h3>
+        <span class="badge ${live ? 'b-delivered' : 'b-refunded'}">${live ? '🟢 À venda' : '🔴 Esgotado'}</span></div>
+        <div class="state">${live ? 'Aparece com botão de compra no site.' : 'Mostra "ESGOTADO" + "me avise quando voltar".'}</div></div>`;
+    }).join('');
 
     const ev = evRes.events.slice(0, 6);
     $('#ov-activity').innerHTML = !ev.length ? '<div class="empty">Sem atividade ainda.</div>' :
@@ -410,6 +456,12 @@ function openOrder(o) {
     <h3>${esc(o.buyer_name) || 'Pedido'}</h3>
     <div style="margin:6px 0 16px">${badge(o.status)}</div>
     ${timeline(o.status)}
+    <div class="d-section"><h4>Mudar status</h4>
+      <select id="status-sel" class="status-select" onchange="setStatus('${o.stripe_session_id}', this.value)">
+        ${Object.keys(STATUS).map(s => `<option value="${s}" ${o.status === s ? 'selected' : ''}>${STATUS[s].icon} ${STATUS[s].label}</option>`).join('')}
+      </select>
+      <div class="muted" style="font-size:12px;margin-top:6px">Se digitar o rastreio abaixo antes, ele é salvo junto ao marcar "Enviado".</div>
+    </div>
     <div class="d-section"><h4>Cliente</h4>
       <div class="d-row"><span class="lbl">E-mail</span><span class="val">${esc(o.buyer_email) || '—'}</span></div>
       <div class="d-row"><span class="lbl">Telefone</span><span class="val">${esc(o.buyer_phone) || '—'}</span></div>
@@ -427,10 +479,6 @@ function openOrder(o) {
     <div class="d-section"><h4>Ações</h4><div class="actions">
       ${o.label_url ? `<a class="btn btn-primary" href="${esc(o.label_url)}" target="_blank">🏷️ Abrir etiqueta (PDF)</a>` : ''}
       <a class="btn" href="https://dashboard.stripe.com/payments/${esc(o.stripe_payment_intent)}" target="_blank">Ver pagamento no Stripe</a>
-      <div class="btn-row">
-        <button class="btn" onclick="setStatus('${o.stripe_session_id}','shipped')">🚚 Enviado</button>
-        <button class="btn" onclick="setStatus('${o.stripe_session_id}','delivered')">✅ Entregue</button></div>
-      <button class="btn" onclick="setStatus('${o.stripe_session_id}','refunded')">↩️ Reembolsado</button>
       <div style="margin-top:4px">
         <button class="btn btn-primary" style="width:100%" onclick="regen('${o.stripe_session_id}', null, this)">🔄 Regerar etiqueta</button>
         <div class="cep-row"><input id="cep-ov" placeholder="CEP correto (se o cliente errou)" /><button class="btn" onclick="regen('${o.stripe_session_id}', $('#cep-ov').value.trim(), this)">com CEP</button></div></div>
@@ -479,7 +527,7 @@ async function loadDrops() {
       else if (!inStock) state = '🔴 Estoque zerado — esgotado no site automaticamente.';
       else state = '🟢 À venda no site — botão de compra ativo.';
       return `<div class="card drop-card">
-        <div class="top"><h3>${swatch(d.color)} ${esc(d.label)}</h3>
+        <div class="top"><h3>${dot(d.color)} ${esc(d.label)}</h3>
           <label class="switch" title="Liga/desliga venda"><input type="checkbox" ${d.available ? 'checked' : ''} onchange="toggleDrop('${d.color}', this.checked)"><span class="slider"></span></label></div>
         <div class="state" style="margin-bottom:14px">${state}</div>
         <div class="d-row" style="align-items:center"><span class="lbl">Estoque</span>
