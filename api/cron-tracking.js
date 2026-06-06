@@ -9,7 +9,7 @@
 
 import { getTracking } from './_lib/melhor-envio.js';
 import { listSyncableOrders, patchOrder, logEvent } from './_lib/db.js';
-import { sendTrackingEmail } from './_lib/mail.js';
+import { sendTrackingEmail, sendShippedEmail } from './_lib/mail.js';
 import { withRequestLog } from './_lib/reqlog.js';
 
 const RANK = { paid: 0, label_generated: 1, shipped: 2, delivered: 3 };
@@ -55,8 +55,18 @@ async function handler(req, res) {
         if (patch.tracking_code) tracked++;
         if (!code) stillPending++;
 
-        // 3) e-mail só quando o código aparece pela primeira vez
-        if (newCode) {
+        // 3) e-mails por transição:
+        //    - virou "postado" → e-mail "a caminho" (prioridade)
+        //    - senão, código apareceu pela 1ª vez → e-mail "código disponível"
+        const becameShipped = patch.status === 'shipped';
+        const codeForEmail = code ?? o.tracking_code;
+        if (becameShipped && codeForEmail) {
+          const sent = await sendShippedEmail({ to: o.buyer_email, name: o.buyer_name, trackingCode: codeForEmail, summary: o.product_name });
+          if (sent) {
+            emailed++;
+            await logEvent({ type: 'shipped_email', source: 'cron-tracking', stripe_session_id: o.stripe_session_id, status: 'ok', payload: { to: o.buyer_email, tracking: codeForEmail } });
+          }
+        } else if (newCode) {
           const sent = await sendTrackingEmail({ to: o.buyer_email, name: o.buyer_name, trackingCode: code, summary: o.product_name });
           if (sent) {
             emailed++;
