@@ -104,6 +104,8 @@ alter table public.orders add column if not exists stock_decremented boolean def
 alter table public.orders add column if not exists quantity integer default 1;
 -- detalhamento por cor do pedido (order bump pode misturar cores): {"verde":1,"marrom":1}
 alter table public.orders add column if not exists items jsonb;
+-- flag pra não mandar o e-mail de confirmação duas vezes:
+alter table public.orders add column if not exists confirmation_sent boolean default false;
 
 -- Seed inicial: verde esgotado, marrom disponível
 insert into public.drops (color, label, available, stripe_payment_link, sort) values

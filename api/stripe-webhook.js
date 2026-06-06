@@ -6,9 +6,9 @@ import Stripe from 'stripe';
 import { pickCheapestService, addToCart, checkoutAndGenerate, getPrintUrl, getTracking } from './_lib/melhor-envio.js';
 import { normalizeStateUf, getRecipientCpf, buildOrderItems, describeError } from './_lib/config.js';
 import { notifyShipmentError } from './_lib/notify.js';
-import { upsertOrder, updateOrder, logEvent, registerSale, getOrderBySession } from './_lib/db.js';
+import { upsertOrder, updateOrder, patchOrder, logEvent, registerSale, getOrderBySession } from './_lib/db.js';
 import { withRequestLog } from './_lib/reqlog.js';
-import { sendTrackingEmail } from './_lib/mail.js';
+import { sendTrackingEmail, sendConfirmationEmail } from './_lib/mail.js';
 
 export const config = {
   api: { bodyParser: false }, // Stripe valida assinatura no body cru
@@ -106,6 +106,15 @@ async function handler(req, res) {
 
     // Desconta o estoque por cor/quantidade (idempotente — não desconta 2x no mesmo pedido).
     await registerSale(session.id, items.qtyByColor);
+
+    // E-mail de confirmação (uma vez por pedido), independente do resultado da etiqueta.
+    if (!existing?.confirmation_sent) {
+      const ok = await sendConfirmationEmail({ to: context.buyer.email, name: context.buyer.name, summary: items.summary });
+      if (ok) {
+        await patchOrder(session.id, { confirmation_sent: true });
+        await logEvent({ type: 'confirmation_email', source: 'stripe-webhook', stripe_session_id: session.id, status: 'ok', payload: { to: context.buyer.email } });
+      }
+    }
 
     const destinationCep = shipping.address.postal_code.replace(/\D/g, '');
     const destinationAddress = {
