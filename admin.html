@@ -461,7 +461,7 @@ $('#refresh-tracking-btn').addEventListener('click', async (e) => {
   const btn = e.currentTarget; btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Buscando…';
   try {
     const r = await api('/api/admin/refresh-tracking', { method: 'POST' });
-    toast(`Rastreios: ${r.updated} atualizados, ${r.emailed} e-mails · ${r.still_pending} ainda sem`);
+    toast(`${r.tracked} rastreios · ${r.advanced} status atualizados · ${r.emailed} e-mails · ${r.still_pending} sem código`);
     await fetchOrders(); renderSegs(); renderOrders();
   } catch (err) { toast(err.message, true); }
   finally { btn.disabled = false; btn.textContent = orig; }

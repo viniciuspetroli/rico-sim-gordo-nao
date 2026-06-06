@@ -178,12 +178,11 @@ export async function patchOrder(stripeSessionId, patch) {
   return data;
 }
 
-// Pedidos com etiqueta gerada mas ainda sem código de rastreio.
-export async function listPendingTracking() {
+// Pedidos não-finalizados com etiqueta — pra sincronizar rastreio E status com o ME.
+export async function listSyncableOrders() {
   const c = db();
   if (!c) throw new Error('banco indisponível');
   const { data, error } = await c.from('orders').select('*')
-    .is('tracking_code', null)
     .not('me_order_id', 'is', null)
     .in('status', ['label_generated', 'shipped'])
     .limit(200);
