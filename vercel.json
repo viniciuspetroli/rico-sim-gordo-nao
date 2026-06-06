@@ -8,6 +8,7 @@
     { "source": "/admin", "destination": "/admin.html" }
   ],
   "crons": [
-    { "path": "/api/cron-refresh-me", "schedule": "0 6 * * *" }
+    { "path": "/api/cron-refresh-me", "schedule": "0 6 * * *" },
+    { "path": "/api/cron-tracking", "schedule": "0 9 * * *" }
   ]
 }

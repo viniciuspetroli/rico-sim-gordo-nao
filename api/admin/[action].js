@@ -100,6 +100,17 @@ export default async function handler(req, res) {
       case 'requests':
         return res.status(200).json({ requests: await listRequests({ source: req.query.source }) });
 
+      case 'refresh-tracking': {
+        if (req.method !== 'POST') return res.status(405).json({ error: 'use POST' });
+        const host = req.headers['x-forwarded-host'] ?? req.headers.host;
+        const proto = req.headers['x-forwarded-proto'] ?? 'https';
+        const r = await fetch(`${proto}://${host}/api/cron-tracking`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-token': process.env.STRIPE_WEBHOOK_SECRET },
+        });
+        return res.status(r.status).json(await r.json());
+      }
+
       default:
         return res.status(404).json({ error: `rota desconhecida: ${action}` });
     }

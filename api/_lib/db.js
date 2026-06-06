@@ -178,6 +178,19 @@ export async function patchOrder(stripeSessionId, patch) {
   return data;
 }
 
+// Pedidos com etiqueta gerada mas ainda sem código de rastreio.
+export async function listPendingTracking() {
+  const c = db();
+  if (!c) throw new Error('banco indisponível');
+  const { data, error } = await c.from('orders').select('*')
+    .is('tracking_code', null)
+    .not('me_order_id', 'is', null)
+    .in('status', ['label_generated', 'shipped'])
+    .limit(200);
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export async function listWaitlist() {
   const c = db();
   if (!c) throw new Error('banco indisponível');
