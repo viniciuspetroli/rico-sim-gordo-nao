@@ -128,7 +128,7 @@
   .b-error { background: var(--red-bg); color: var(--red); }
   .swatch { display: inline-block; width: 11px; height: 11px; border-radius: 3px; vertical-align: middle; margin-right: 6px; }
   .sw-verde { background: #3d4a2a; } .sw-marrom { background: #4a3528; }
-  .quick { padding: 5px 11px; border-radius: 7px; border: 1px solid var(--border); background: var(--card); font-size: 12px; font-weight: 600; color: var(--soft); }
+  .quick { display: inline-block; padding: 5px 11px; border-radius: 7px; border: 1px solid var(--border); background: var(--card); font-size: 12px; font-weight: 600; color: var(--soft); text-decoration: none; }
   .quick:hover { background: var(--green-bg); color: var(--green); border-color: var(--green-bg); }
 
   /* TIMELINE (drawer) */
@@ -444,13 +444,15 @@ function renderOrders() {
     <th>Data</th><th>Cliente</th><th>Cor</th><th>Valor</th><th>Status</th><th></th></tr></thead>
     <tbody>${list.map(o => {
       const i = ALL_ORDERS.indexOf(o);
+      const label = o.label_url
+        ? `<a class="quick" href="${esc(o.label_url)}" target="_blank" onclick="event.stopPropagation()" title="Abrir etiqueta (PDF)">🏷️</a>` : '';
       const quick = (o.status === 'label_generated' || o.status === 'paid')
         ? `<button class="quick" onclick="event.stopPropagation();quickShip('${o.stripe_session_id}')">✓ enviado</button>` : '';
       return `<tr class="clickable" data-i="${i}">
         <td class="muted">${fmtDate(o.created_at)}</td>
         <td>${esc(o.buyer_name) || '—'}<div class="muted" style="font-size:12px">${esc(o.buyer_email) || ''}</div></td>
         <td>${orderColors(o)}</td><td>${fmtMoney(o.amount_total)}</td>
-        <td>${badge(o.status)}</td><td style="text-align:right">${quick}</td></tr>`;
+        <td>${badge(o.status)}</td><td style="text-align:right;white-space:nowrap">${label} ${quick}</td></tr>`;
     }).join('')}</tbody></table>`;
   document.querySelectorAll('#orders-body tr.clickable').forEach(tr => tr.addEventListener('click', () => openOrder(ALL_ORDERS[tr.dataset.i])));
 }
