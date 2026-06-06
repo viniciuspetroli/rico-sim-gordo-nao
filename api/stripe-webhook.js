@@ -8,6 +8,7 @@ import { normalizeStateUf, getRecipientCpf, buildOrderItems, describeError } fro
 import { notifyShipmentError } from './_lib/notify.js';
 import { upsertOrder, updateOrder, logEvent, registerSale, getOrderBySession } from './_lib/db.js';
 import { withRequestLog } from './_lib/reqlog.js';
+import { sendTrackingEmail } from './_lib/mail.js';
 
 export const config = {
   api: { bodyParser: false }, // Stripe valida assinatura no body cru
@@ -160,6 +161,15 @@ async function handler(req, res) {
       status: 'ok',
       payload: { me_order_id: orderId, tracking_code: tracking[orderId]?.tracking, service: service.name, price: service.price },
     });
+
+    // Avisa o cliente com o código de rastreio (não bloqueia em caso de falha).
+    const emailed = await sendTrackingEmail({
+      to: context.buyer.email,
+      name: context.buyer.name,
+      trackingCode: tracking[orderId]?.tracking,
+      summary: items.summary,
+    });
+    if (emailed) await logEvent({ type: 'tracking_email', source: 'stripe-webhook', stripe_session_id: session.id, status: 'ok', payload: { to: context.buyer.email } });
 
     return res.status(200).json({
       received: true,

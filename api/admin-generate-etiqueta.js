@@ -17,6 +17,7 @@ import { normalizeStateUf, getRecipientCpf, buildOrderItems, describeError } fro
 import { notifyShipmentError } from './_lib/notify.js';
 import { upsertOrder, updateOrder, logEvent } from './_lib/db.js';
 import { withRequestLog } from './_lib/reqlog.js';
+import { sendTrackingEmail } from './_lib/mail.js';
 
 async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'use POST' });
@@ -129,6 +130,15 @@ async function handler(req, res) {
       status: 'ok',
       payload: { me_order_id: orderId, tracking_code: tracking[orderId]?.tracking, cep_used: destinationCep, cep_overridden: !!cep_override },
     });
+
+    // Avisa o cliente com o rastreio.
+    const emailed = await sendTrackingEmail({
+      to: context.buyer.email,
+      name: context.buyer.name,
+      trackingCode: tracking[orderId]?.tracking,
+      summary: items.summary,
+    });
+    if (emailed) await logEvent({ type: 'tracking_email', source: 'admin-generate-etiqueta', stripe_session_id: session_id, status: 'ok', payload: { to: context.buyer.email } });
 
     return res.status(200).json({
       ok: true,
